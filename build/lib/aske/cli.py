@@ -37,7 +37,7 @@ def python(name):
 
     # Create project directory
     click.echo(f"📁 Creating project directory: {project_path}")
-    os.makedirs(project_path, exist_ok=False)  # Changed to fail if directory exists
+    os.makedirs(project_path, exist_ok=False)
     
     # Create virtual environment
     click.echo("\n🔧 Setting up Python virtual environment...")
@@ -127,8 +127,14 @@ venv/
     with open(project_config, 'w') as f:
         f.write(project_path)
 
-    # Output cd command for shell to execute
-    print(f"\ncd {project_path}")
+    # Print platform-specific cd command
+    if os.name == 'nt':  # Windows
+        # For Windows Command Prompt
+        print(f"@echo off && cd /d {project_path}")
+        # For PowerShell
+        print(f"$null = Set-Location -Path '{project_path}'")
+    else:  # Unix/MacOS
+        print(f"cd '{project_path}'")
 
 @main.command()
 def init():
