@@ -3,8 +3,9 @@ import os
 import subprocess
 import sys
 import shutil
+import time
 from aske import __version__
-from aske.core.models import GitignoreModel, NodejsModel
+from aske.core.models import GitignoreModel, NodejsModel, NextjsModel
 
 # Add color constants
 RED = "\033[91m"
@@ -256,6 +257,100 @@ def node(name):
     click.echo(command_text("yarn install  # Install dependencies"))
     click.echo(command_text("yarn dev      # Start development server"))
     click.echo(command_text("aske init     # Initialize git repository"))
+
+@main.command()
+@click.argument('name')
+def next(name):
+    """Create a new Next.js project with TypeScript"""
+    project_path = os.path.abspath(name)
+    
+    # Check if project already exists
+    if os.path.exists(project_path):
+        click.echo(error_text(f"❌ Error: Project directory '{name}' already exists"), err=True)
+        click.echo(error_text("Please choose a different name or remove the existing directory"), err=True)
+        sys.exit(1)
+    
+    # Check if nvm is installed
+    home = os.path.expanduser("~")
+    nvm_dir = os.path.join(home, ".nvm")
+    if not os.path.exists(nvm_dir):
+        click.echo(error_text("\n❌ NVM (Node Version Manager) is not installed or not found!"))
+        click.echo("\nPlease install NVM first:")
+        click.echo(command_text("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"))
+        click.echo("\nThen restart your terminal and run:")
+        click.echo(command_text("nvm install node  # Install latest Node.js version"))
+        return
+
+    # Check if yarn is installed
+    try:
+        subprocess.run(['yarn', '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        click.echo(error_text("\n❌ Yarn package manager is not installed!"))
+        click.echo("\nPlease install Yarn first:")
+        click.echo(command_text("npm install -g yarn  # Install Yarn globally"))
+        click.echo("\nOr if you prefer Homebrew:")
+        click.echo(command_text("brew install yarn"))
+        return
+
+    click.echo(f"\n🚀 Creating new Next.js project: {name}")
+    click.echo("=" * 50)
+
+    try:
+        # Create Next.js project with TypeScript
+        click.echo("\n📦 Creating Next.js project with TypeScript...")
+        subprocess.run([
+            'npx', 
+            'create-next-app@latest', 
+            name, 
+            '--typescript', 
+            '--use-yarn',
+            '--no-git',  # Don't initialize git - we'll use aske init
+            '--src-dir',  # Use src directory structure
+            '--import-alias', '@/*'  # Modern import alias
+        ], check=True)
+
+        # Wait a moment for file system to sync
+        time.sleep(1)
+
+        # Create ModelPrompt component
+        component_path = os.path.join(project_path, 'src/components/ModelPrompt.tsx')
+        os.makedirs(os.path.dirname(component_path), exist_ok=True)
+        with open(component_path, 'w') as f:
+            f.write(NextjsModel.get_model_prompt_component())
+        click.echo("✓ Created ModelPrompt component")
+
+        # Update index page - check both possible locations
+        index_paths = [
+            os.path.join(project_path, 'src/app/page.tsx'),  # New app directory
+            os.path.join(project_path, 'src/pages/index.tsx')  # Traditional pages directory
+        ]
+        
+        index_path = None
+        for path in index_paths:
+            if os.path.exists(os.path.dirname(path)):
+                index_path = path
+                break
+
+        if index_path:
+            with open(index_path, 'w') as f:
+                f.write(NextjsModel.get_index_page())
+            click.echo(f"✓ Updated index page at {os.path.relpath(index_path, project_path)}")
+        else:
+            click.echo(error_text("❌ Could not find index page location"))
+
+        click.echo("\n✨ Next.js project created successfully!")
+        click.echo("\nNext steps:")
+        click.echo(command_text(f"cd {name}"))
+        click.echo(command_text("yarn install     # Install dependencies"))
+        click.echo(command_text("yarn dev        # Start development server"))
+        click.echo(command_text("aske init       # Initialize git repository"))
+
+    except subprocess.CalledProcessError as e:
+        click.echo(error_text(f"\n❌ Error creating Next.js project: {e}"), err=True)
+        return
+    except Exception as e:
+        click.echo(error_text(f"\n❌ Unexpected error: {e}"), err=True)
+        return
 
 if __name__ == '__main__':
     main()
