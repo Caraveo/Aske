@@ -26,18 +26,19 @@ def python(name):
     """Create a new Python project and set up its structure"""
     project_path = os.path.abspath(name)
     
+    # Check if project already exists
+    if os.path.exists(project_path):
+        click.echo(f"❌ Error: Project directory '{name}' already exists", err=True)
+        click.echo("Please choose a different name or remove the existing directory", err=True)
+        sys.exit(1)
+    
     click.echo(f"\n🚀 Creating new Python project: {name}")
     click.echo("=" * 50)
 
     # Create project directory
     click.echo(f"📁 Creating project directory: {project_path}")
-    os.makedirs(project_path, exist_ok=True)
+    os.makedirs(project_path, exist_ok=False)  # Changed to fail if directory exists
     
-    # Change to project directory
-    click.echo(f"📍 Changing to project directory")
-    if not change_directory(project_path):
-        return
-
     # Create virtual environment
     click.echo("\n🔧 Setting up Python virtual environment...")
     
@@ -59,7 +60,8 @@ def python(name):
         return
 
     try:
-        subprocess.run([python_executable, "-m", "venv", "venv"], check=True)
+        venv_path = os.path.join(project_path, "venv")
+        subprocess.run([python_executable, "-m", "venv", venv_path], check=True)
         click.echo("✓ Virtual environment created successfully")
     except Exception as e:
         click.echo(f"❌ Error creating virtual environment: {e}", err=True)
@@ -110,8 +112,9 @@ venv/
     }
 
     for file_name, content in files.items():
+        full_path = os.path.join(project_path, file_name)
         click.echo(f"📄 Creating {file_name}")
-        with open(file_name, 'w') as f:
+        with open(full_path, 'w') as f:
             f.write(content)
 
     click.echo("\n✨ Project structure created successfully!")
@@ -119,10 +122,13 @@ venv/
     click.echo("1. Run 'aske init' to initialize git and install dependencies")
     click.echo("2. Run 'aske activate' to activate the virtual environment")
 
-    # Create a file to store the project path
+    # Store project path for other commands
     project_config = os.path.expanduser('~/.aske_project')
     with open(project_config, 'w') as f:
         f.write(project_path)
+
+    # Output cd command for shell to execute
+    print(f"\ncd {project_path}")
 
 @main.command()
 def init():

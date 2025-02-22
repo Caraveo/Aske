@@ -26,22 +26,20 @@ def python(name):
     """Create a new Python project and set up its structure"""
     project_path = os.path.abspath(name)
     
+    # Check if project already exists
+    if os.path.exists(project_path):
+        click.echo(f"❌ Error: Project directory '{name}' already exists", err=True)
+        click.echo("Please choose a different name or remove the existing directory", err=True)
+        sys.exit(1)
+    
     click.echo(f"\n🚀 Creating new Python project: {name}")
     click.echo("=" * 50)
 
     # Create project directory
     click.echo(f"📁 Creating project directory: {project_path}")
-    os.makedirs(project_path, exist_ok=True)
-
-    # Store project path for shell to handle directory change
-    project_config = os.path.expanduser('~/.aske_project')
-    with open(project_config, 'w') as f:
-        f.write(project_path)
-
-    # Instead of changing directory here, output command for shell to execute
-    click.echo(f"cd {project_path}")
+    os.makedirs(project_path, exist_ok=False)
     
-    # Create virtual environment (using absolute paths)
+    # Create virtual environment
     click.echo("\n🔧 Setting up Python virtual environment...")
     
     # Find Python executable
@@ -69,7 +67,7 @@ def python(name):
         click.echo(f"❌ Error creating virtual environment: {e}", err=True)
         return
 
-    # Create project structure (using absolute paths)
+    # Create project structure
     click.echo("\n📝 Creating project files...")
     files = {
         'requirements.txt': '''# Core dependencies
@@ -124,8 +122,19 @@ venv/
     click.echo("1. Run 'aske init' to initialize git and install dependencies")
     click.echo("2. Run 'aske activate' to activate the virtual environment")
 
-    # Exit with success code for shell evaluation
-    sys.exit(0)
+    # Store project path for other commands
+    project_config = os.path.expanduser('~/.aske_project')
+    with open(project_config, 'w') as f:
+        f.write(project_path)
+
+    # Print platform-specific cd command
+    if os.name == 'nt':  # Windows
+        # For Windows Command Prompt
+        print(f"@echo off && cd /d {project_path}")
+        # For PowerShell
+        print(f"$null = Set-Location -Path '{project_path}'")
+    else:  # Unix/MacOS
+        print(f"cd '{project_path}'")
 
 @main.command()
 def init():
