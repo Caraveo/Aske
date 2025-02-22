@@ -25,7 +25,7 @@ Using Homebrew
 
 Alternatively, if you prefer Homebrew (note that the Homebrew formula is pending integration into the official Homebrew-core):
 
-```brew install aske```
+```brew tap caraveo/aske && brew install aske```
 
 Usage
 
