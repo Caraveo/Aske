@@ -3,8 +3,8 @@ class Aske < Formula
 
   desc "Platform Architect Development Framework"
   homepage "https://github.com/caraveo/aske"
-  url "https://github.com/caraveo/aske/dist/aske-0.1.0.tar.gz"
-  sha256 ""
+  url "https://github.com/Caraveo/Aske/blob/main/dist/aske-0.1.0.tar.gz"
+  sha256 "d4a85ad6c0e15c26a6b2eb8511305251be4b5ab8c7016aeb4a86352e86f25b4c"
   license "MIT"
 
   depends_on "python@3.11"
