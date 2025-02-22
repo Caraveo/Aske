@@ -6,6 +6,24 @@ import shutil
 from aske import __version__
 from aske.core.models import GitignoreModel
 
+# Add color constants
+RED = "\033[91m"
+ORANGE = "\033[93m"
+GREEN = "\033[92m"
+RESET = "\033[0m"
+
+def error_text(message):
+    """Format error message in red"""
+    return f"{RED}{message}{RESET}"
+
+def command_text(message):
+    """Format command in orange"""
+    return f"{ORANGE}{message}{RESET}"
+
+def success_text(message):
+    """Format success message in green"""
+    return f"{GREEN}{message}{RESET}"
+
 def change_directory(path):
     """Change directory and return success status"""
     try:
@@ -29,8 +47,8 @@ def python(name):
     
     # Check if project already exists
     if os.path.exists(project_path):
-        click.echo(f"❌ Error: Project directory '{name}' already exists", err=True)
-        click.echo("Please choose a different name or remove the existing directory", err=True)
+        click.echo(error_text(f"❌ Error: Project directory '{name}' already exists"), err=True)
+        click.echo(error_text("Please choose a different name or remove the existing directory"), err=True)
         sys.exit(1)
     
     click.echo(f"\n🚀 Creating new Python project: {name}")
@@ -57,7 +75,7 @@ def python(name):
         click.echo("✓ Using 'python3' command")
     
     if not python_executable:
-        click.echo("❌ Error: Could not find Python executable", err=True)
+        click.echo(error_text("❌ Error: Could not find Python executable"), err=True)
         return
 
     try:
@@ -65,11 +83,11 @@ def python(name):
         subprocess.run([python_executable, "-m", "venv", venv_path], check=True)
         click.echo("✓ Virtual environment created successfully")
     except Exception as e:
-        click.echo(f"❌ Error creating virtual environment: {e}", err=True)
+        click.echo(error_text(f"❌ Error creating virtual environment: {e}"), err=True)
         return
 
     # Create project structure
-    click.echo("\n📝 Creating project files...")
+    click.echo("\n✓ Creating project files...")
     files = {
         'requirements.txt': '''# Core dependencies
 python-dotenv>=1.0.0
@@ -95,20 +113,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-''',
-        '.gitignore': '''# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-.env
-
-# IDE
-.vscode/
-.idea/
-*.swp
 '''
     }
 
@@ -120,10 +124,11 @@ venv/
 
     click.echo("\n✨ Project structure created successfully!")
     click.echo(f"\nTo start working on your project:")
-    click.echo(f"cd {name}")
-    click.echo("source venv/bin/activate  # On Unix/MacOS")
-    click.echo("venv\\Scripts\\activate    # On Windows")
-    click.echo("pip install -r requirements.txt")
+    click.echo(command_text(f"cd {name}"))
+    click.echo(command_text("source venv/bin/activate  # On Unix/MacOS"))
+    click.echo(command_text("venv\\Scripts\\activate    # On Windows"))
+    click.echo(command_text("pip install -r requirements.txt"))
+    click.echo(command_text("aske init    # To initialize git and create .gitignore"))
 
 @main.command()
 def activate():
@@ -134,8 +139,8 @@ def activate():
     # Check if we're in a project directory
     venv_path = os.path.join(os.getcwd(), "venv")
     if not os.path.exists(venv_path):
-        click.echo("❌ Error: No virtual environment found in current directory", err=True)
-        click.echo("Make sure you're in a project directory created with 'aske python <name>'", err=True)
+        click.echo(error_text("❌ Error: No virtual environment found in current directory"), err=True)
+        click.echo(error_text("Make sure you're in a project directory created with 'aske python <name>'"), err=True)
         return
 
     # Get the activation script path based on platform
@@ -147,8 +152,45 @@ def activate():
         activate_cmd = f"source {activate_script}"
 
     # Print the command that needs to be evaluated by the shell
-    click.echo(activate_cmd)
+    click.echo(command_text(activate_cmd))
     
+
+@main.command()
+def init():
+    """Initialize git repository with .gitignore"""
+    click.echo("\n🚀 Initializing git repository...")
+    
+    # Check if git is already initialized
+    if os.path.exists('.git'):
+        click.echo(error_text("❌ Git repository already exists in this directory"), err=True)
+        return
+
+    try:
+        # Initialize git repository
+        subprocess.run(['git', 'init'], check=True)
+        click.echo(success_text("✓ Git repository initialized"))
+
+        # Create or update .gitignore
+        click.echo("📄 Creating/updating .gitignore file...")
+        with open('.gitignore', 'w') as f:
+            f.write(GitignoreModel.get_python_gitignore())
+        click.echo(success_text("✓ Created/updated .gitignore file"))
+
+        # Add files to git
+        subprocess.run(['git', 'add', '.gitignore'], check=True)
+        click.echo(success_text("✓ Added .gitignore to git"))
+        
+        click.echo("\n✨ Git repository initialized successfully!")
+        click.echo("\nNext steps:")
+        click.echo(command_text("git add ."))
+        click.echo(command_text("git commit -m 'Initial commit'"))
+
+    except subprocess.CalledProcessError as e:
+        click.echo(error_text(f"❌ Error initializing git repository: {e}"), err=True)
+        return
+    except Exception as e:
+        click.echo(error_text(f"❌ Unexpected error: {e}"), err=True)
+        return
 
 if __name__ == '__main__':
     main()
