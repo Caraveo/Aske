@@ -4,6 +4,7 @@ import subprocess
 import sys
 import shutil
 from aske import __version__
+from aske.core.models import GitignoreModel
 
 def change_directory(path):
     """Change directory and return success status"""
@@ -147,7 +148,7 @@ def activate():
 
     # Print the command that needs to be evaluated by the shell
     click.echo(activate_cmd)
-    sys.exit(0)
+    
 
 if __name__ == '__main__':
     main()

@@ -11,3 +11,4 @@ src/aske.egg-info/entry_points.txt
 src/aske.egg-info/requires.txt
 src/aske.egg-info/top_level.txt
 src/aske/core/__init__.py
+src/aske/core/models.py
