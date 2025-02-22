@@ -3,8 +3,8 @@ class Aske < Formula
 
   desc "Platform Architect Development Framework"
   homepage "https://github.com/caraveo/aske"
-  url "https://github.com/caraveo/aske/dist/v0.1.0.tar.gz"
-  sha256 "YOUR_TARBALL_SHA256_HERE"
+  url "https://github.com/caraveo/aske/dist/aske-0.1.0.tar.gz"
+  sha256 ""
   license "MIT"
 
   depends_on "python@3.11"
@@ -26,47 +26,6 @@ class Aske < Formula
 
   def install
     virtualenv_install_with_resources
-
-    # Create shell completion scripts
-    generate_completions_from_executable(bin/"aske", shells: [:bash, :zsh, :fish])
-
-    # Install shell wrapper script
-    (buildpath/"aske-wrapper.sh").write <<~EOS
-      #!/bin/bash
-      if [ "$1" = "python" ]; then
-          output=$(command aske "$@")
-          echo "$output"
-          cd_command=$(echo "$output" | grep "^cd '" | tail -n 1)
-          if [ ! -z "$cd_command" ]; then
-              eval "$cd_command"
-          fi
-      else
-          command aske "$@"
-      fi
-    EOS
-
-    (bin/"aske-wrapper").write <<~EOS
-      #!/bin/bash
-      source #{prefix}/aske-wrapper.sh
-    EOS
-
-    chmod 0755, bin/"aske-wrapper"
-    prefix.install "aske-wrapper.sh"
-  end
-
-  def caveats
-    <<~EOS
-      To enable automatic directory changing, add this to your shell's config file:
-      
-      For bash (~/.bashrc):
-        alias aske=". aske-wrapper"
-      
-      For zsh (~/.zshrc):
-        alias aske=". aske-wrapper"
-      
-      Then restart your shell or run:
-        source ~/.bashrc  # or source ~/.zshrc
-    EOS
   end
 
   test do

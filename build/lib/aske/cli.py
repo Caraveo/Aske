@@ -118,84 +118,15 @@ venv/
             f.write(content)
 
     click.echo("\n✨ Project structure created successfully!")
-    click.echo("\nNext steps:")
-    click.echo("1. Run 'aske init' to initialize git and install dependencies")
-    click.echo("2. Run 'aske activate' to activate the virtual environment")
-
-    # Store project path for other commands
-    project_config = os.path.expanduser('~/.aske_project')
-    with open(project_config, 'w') as f:
-        f.write(project_path)
-
-    # Print platform-specific cd command
-    if os.name == 'nt':  # Windows
-        # For Windows Command Prompt
-        print(f"@echo off && cd /d {project_path}")
-        # For PowerShell
-        print(f"$null = Set-Location -Path '{project_path}'")
-    else:  # Unix/MacOS
-        print(f"cd '{project_path}'")
-
-@main.command()
-def init():
-    """Initialize git repository and install dependencies"""
-    # Try to read last project path
-    project_config = os.path.expanduser('~/.aske_project')
-    if os.path.exists(project_config):
-        with open(project_config, 'r') as f:
-            project_path = f.read().strip()
-            if project_path and os.path.exists(project_path):
-                click.echo(f"📍 Changing to project directory: {project_path}")
-                if not change_directory(project_path):
-                    return
-
-    click.echo("\n🚀 Initializing project...")
-    click.echo("=" * 50)
-
-    # Check if we're in a project directory
-    if not os.path.exists('requirements.txt'):
-        click.echo("❌ Error: No requirements.txt found. Are you in a project directory?", err=True)
-        return
-
-    # Initialize git repository
-    click.echo("\n📦 Initializing git repository...")
-    try:
-        subprocess.run(["git", "init"], check=True)
-        click.echo("✓ Git repository initialized")
-    except subprocess.CalledProcessError:
-        click.echo("⚠️  Warning: Could not initialize git repository", err=True)
-
-    # Install dependencies
-    click.echo("\n📥 Installing project dependencies...")
-    try:
-        if os.name == 'nt':  # Windows
-            pip_path = os.path.join("venv", "Scripts", "pip")
-        else:  # Unix/MacOS
-            pip_path = os.path.join("venv", "bin", "pip")
-        
-        subprocess.run([pip_path, "install", "-r", "requirements.txt"], check=True)
-        click.echo("✓ Dependencies installed successfully")
-    except subprocess.CalledProcessError as e:
-        click.echo(f"❌ Error installing dependencies: {e}", err=True)
-        return
-
-    click.echo("\n✨ Project initialized successfully!")
-    click.echo("\nNext step:")
-    click.echo("Run 'aske activate' to activate the virtual environment")
+    click.echo(f"\nTo start working on your project:")
+    click.echo(f"cd {name}")
+    click.echo("source venv/bin/activate  # On Unix/MacOS")
+    click.echo("venv\\Scripts\\activate    # On Windows")
+    click.echo("pip install -r requirements.txt")
 
 @main.command()
 def activate():
     """Activate the Python virtual environment"""
-    # Try to read last project path
-    project_config = os.path.expanduser('~/.aske_project')
-    if os.path.exists(project_config):
-        with open(project_config, 'r') as f:
-            project_path = f.read().strip()
-            if project_path and os.path.exists(project_path):
-                click.echo(f"📍 Changing to project directory: {project_path}")
-                if not change_directory(project_path):
-                    return
-
     click.echo("\n🚀 Activating virtual environment...")
     click.echo("=" * 50)
 
@@ -206,8 +137,6 @@ def activate():
         click.echo("Make sure you're in a project directory created with 'aske python <name>'", err=True)
         return
 
-    click.echo("🔍 Detecting platform and locating activation script...")
-    
     # Get the activation script path based on platform
     if os.name == 'nt':  # Windows
         activate_script = os.path.join(venv_path, "Scripts", "activate.bat")
@@ -216,38 +145,9 @@ def activate():
         activate_script = os.path.join(venv_path, "bin", "activate")
         activate_cmd = f"source {activate_script}"
 
-    click.echo(f"✓ Found activation script: {activate_script}")
-    click.echo("\n🔄 Activating environment...")
-    
     # Print the command that needs to be evaluated by the shell
     click.echo(activate_cmd)
-    sys.exit(0)  # Clean exit for shell evaluation
-
-def _change_to_project_dir():
-    """Helper function to change to the project directory"""
-    project_config = os.path.expanduser('~/.aske_project')
-    if not os.path.exists(project_config):
-        click.echo("❌ No project directory found. Create a project first with 'aske python <name>'", err=True)
-        return
-
-    with open(project_config, 'r') as f:
-        project_path = f.read().strip()
-        if not project_path or not os.path.exists(project_path):
-            click.echo("❌ Last project directory not found", err=True)
-            return
-
-        click.echo(f"cd {project_path}")
-        sys.exit(0)  # Clean exit for shell evaluation
-
-@main.command('cd')
-def change_dir():
-    """Change to the last used project directory"""
-    _change_to_project_dir()
-
-@main.command('ld')
-def last_dir():
-    """Change to the last used project directory (alias for cd)"""
-    _change_to_project_dir()
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()
