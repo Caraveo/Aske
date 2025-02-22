@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aske"
+version = "0.1.0"
+description = "Platform Architect Development Framework"
+readme = "README.md"
+authors = [{ name = "ASKE Team" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["platform", "architecture", "development", "framework"]
+dependencies = [
+    "click>=8.0.0",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0.0",
+]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = ["black", "pytest"]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/aske"
+
+[project.scripts]
+aske = "aske.cli:main"
+aske-activate = "aske.cli:activate"
+
+[tool.setuptools.package-data]
+aske = ["scripts/*"]

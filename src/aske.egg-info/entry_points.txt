@@ -1,0 +1,3 @@
+[console_scripts]
+aske = aske.cli:main
+aske-activate = aske.cli:activate
