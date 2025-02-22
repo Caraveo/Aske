@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aske"
-version = "0.1.2"
+version = "0.1.3"
 description = "Platform Architect Development Framework"
 readme = "README.md"
 authors = [{ name = "ASKE Team" }]
@@ -26,7 +26,7 @@ requires-python = ">=3.8"
 dev = ["black", "pytest"]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/aske"
+Homepage = "https://github.com/caraveo/aske"
 
 [project.scripts]
 aske = "aske.cli:main"
