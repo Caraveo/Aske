@@ -120,9 +120,12 @@ And if needed, guide you through using environment managers to handle multiple v
 
 ## Guided Installation Process
 Throughout the execution of the pipeline, if the system identifies that a required dependency isn’t installed, it will:
-	- Prompt the user with a message indicating the missing dependency.
-	- Offer direct guidance or commands that can be executed to install the missing dependency specifically optimized for macOS Apple Silicon.
-	- Wait for confirmation or automatic detection of the dependency installation before proceeding further.
+
+Prompt the user with a message indicating the missing dependency.
+
+Offer direct guidance or commands that can be executed to install the missing dependency specifically optimized for macOS Apple Silicon.
+
+Wait for confirmation or automatic detection of the dependency installation before proceeding further.
 	
 ## Final Outcome:
 Once all dependency checks are passed and the necessary frameworks are successfully installed, ASKE will finalize the project setup. At this point, you will have a fully configured project environment, ready for development with the chosen framework.
