@@ -5,7 +5,14 @@ import sys
 import shutil
 import time
 from aske import __version__
-from aske.core.models import GitignoreModel, NodejsModel, NextjsModel
+from aske.core.models import (
+    GitignoreModel,
+    PythonModel,
+    NodejsModel,
+    NextjsModel,
+    ExpressModel,
+    RubyModel
+)
 
 # Add color constants
 RED = "\033[91m"
@@ -90,31 +97,9 @@ def python(name):
     # Create project structure
     click.echo("\n✓ Creating project files...")
     files = {
-        'requirements.txt': '''# Core dependencies
-python-dotenv>=1.0.0
-pyyaml>=6.0
-click>=8.0.0
-''',
-        '.env': f'''# Environment variables
-DEBUG=True
-APP_NAME={name}
-''',
-        'app.py': f'''"""
-{name} application
-"""
-import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-
-def main():
-    """Main application entry point"""
-    pass
-
-if __name__ == "__main__":
-    main()
-'''
+        'requirements.txt': PythonModel.get_requirements(),
+        '.env': PythonModel.get_env(name),
+        'app.py': PythonModel.get_app(name)
     }
 
     for file_name, content in files.items():
@@ -347,6 +332,296 @@ def next(name):
 
     except subprocess.CalledProcessError as e:
         click.echo(error_text(f"\n❌ Error creating Next.js project: {e}"), err=True)
+        return
+    except Exception as e:
+        click.echo(error_text(f"\n❌ Unexpected error: {e}"), err=True)
+        return
+
+@main.command()
+@click.argument('name')
+def express(name):
+    """Create a new Express.js API project"""
+    project_path = os.path.abspath(name)
+    
+    # Check if project already exists
+    if os.path.exists(project_path):
+        click.echo(error_text(f"❌ Error: Project directory '{name}' already exists"), err=True)
+        click.echo(error_text("Please choose a different name or remove the existing directory"), err=True)
+        sys.exit(1)
+    
+    # Check for NVM and Yarn (reuse existing checks)
+    # ... NVM and Yarn checks ...
+
+    click.echo(f"\n🚀 Creating new Express.js API project: {name}")
+    click.echo("=" * 50)
+
+    try:
+        # Create project structure
+        os.makedirs(project_path)
+        
+        # Create directory structure
+        directories = [
+            'src/controllers',
+            'src/routes',
+            'src/middleware',
+            'src/utils',
+            'src/models',
+            'src/services',
+            'tests',
+            'logs'
+        ]
+        
+        for dir_name in directories:
+            dir_path = os.path.join(project_path, dir_name)
+            os.makedirs(dir_path)
+            click.echo(f"📁 Created {dir_name}")
+
+        # Create project files
+        files = {
+            'package.json': ExpressModel.get_package_json(name),
+            '.env': ExpressModel.get_env(),
+            'src/server.js': ExpressModel.get_server_js(),
+            'src/app.js': ExpressModel.get_app_js(),
+            'src/routes/index.js': ExpressModel.get_routes_index(),
+            'src/routes/health.routes.js': ExpressModel.get_health_routes(),
+            'src/routes/user.routes.js': ExpressModel.get_user_routes(),
+            'src/controllers/user.controller.js': ExpressModel.get_user_controller(),
+            'src/middleware/errorHandler.js': ExpressModel.get_error_handler(),
+            'src/utils/logger.js': ExpressModel.get_logger(),
+        }
+
+        for file_path, content in files.items():
+            full_path = os.path.join(project_path, file_path)
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            with open(full_path, 'w') as f:
+                f.write(content)
+            click.echo(f"📄 Created {file_path}")
+
+        click.echo("\n✨ Express.js API project created successfully!")
+        click.echo("\nNext steps:")
+        click.echo(command_text(f"cd {name}"))
+        click.echo(command_text("yarn install     # Install dependencies"))
+        click.echo(command_text("yarn dev        # Start development server"))
+        click.echo(command_text("aske init       # Initialize git repository"))
+
+    except Exception as e:
+        click.echo(error_text(f"\n❌ Unexpected error: {e}"), err=True)
+        return
+
+@main.command()
+@click.argument('name')
+def ruby(name):
+    """Create a new Ruby on Rails project"""
+    
+    # Add warning and confirmation prompt
+    click.echo(error_text("\n⚠️  Warning: Installing a Ruby on Rails project may modify system files."))
+    click.echo("This process will:")
+    click.echo("1. Check and possibly install rbenv")
+    click.echo("2. Install Ruby 3.2.0 via rbenv")
+    click.echo("3. Install Rails and its dependencies")
+    click.echo("4. Modify shell configuration files")
+    
+    if not click.confirm('\nDo you want to continue?', default=False):
+        click.echo("\nOperation cancelled.")
+        return
+        
+    project_path = os.path.abspath(name)
+    
+    # Check if project already exists
+    if os.path.exists(project_path):
+        click.echo(error_text(f"❌ Error: Project directory '{name}' already exists"), err=True)
+        click.echo(error_text("Please choose a different name or remove the existing directory"), err=True)
+        sys.exit(1)
+    
+    # Check if rbenv is installed and properly configured
+    try:
+        rbenv_version = subprocess.run(['rbenv', 'version'], capture_output=True, text=True).stdout
+        click.echo(f"✓ rbenv detected: {rbenv_version.strip()}")
+        
+        # Get the active Ruby version from rbenv
+        rbenv_ruby_version = rbenv_version.split()[0]  # Get just the version number
+        
+        # Check if we're actually using rbenv's Ruby
+        which_ruby = subprocess.run(['which', 'ruby'], capture_output=True, text=True).stdout.strip()
+        ruby_version = subprocess.run(['ruby', '-v'], capture_output=True, text=True).stdout
+        
+        if '.rbenv/shims/ruby' in which_ruby and rbenv_ruby_version >= "3.2.0":
+            click.echo(f"✓ Using rbenv Ruby {rbenv_ruby_version}: {which_ruby}")
+        else:
+            click.echo(error_text("\n❌ Not using the correct rbenv Ruby version!"))
+            click.echo(f"Current Ruby path: {which_ruby}")
+            click.echo(f"Current version: {ruby_version.strip()}")
+            click.echo("\nPlease set up rbenv Ruby 3.2.0:")
+            click.echo(command_text("rbenv install 3.2.0"))
+            click.echo(command_text("rbenv global 3.2.0"))
+            click.echo(command_text("rbenv rehash"))
+            click.echo("\nThen restart your terminal and verify with:")
+            click.echo(command_text("rbenv version"))
+            click.echo(command_text("which ruby  # Should show .rbenv/shims/ruby"))
+            click.echo(command_text("ruby -v    # Should show 3.2.0"))
+            return
+            
+    except FileNotFoundError:
+        click.echo(error_text("\n❌ rbenv is not installed!"))
+        click.echo("\nPlease install rbenv first:")
+        click.echo(command_text("brew install rbenv ruby-build"))
+        click.echo(command_text("rbenv init"))
+        click.echo("\nFollow the instructions above, then run:")
+        click.echo(command_text("rbenv install 3.2.0"))
+        click.echo(command_text("rbenv global 3.2.0"))
+        return
+
+    # Check if Rails is installed with correct Ruby
+    try:
+        result = subprocess.run(['rails', '-v'], capture_output=True, text=True)
+        if result.returncode == 0 and 'Rails' in result.stdout:
+            click.echo(f"✓ Rails detected: {result.stdout.strip()}")
+        else:
+            click.echo(error_text("\n❌ Rails is not properly installed!"))
+            click.echo("\nLet's install Rails:")
+            click.echo("\n1. First verify you're using rbenv Ruby:")
+            click.echo(command_text("rbenv version"))
+            
+            click.echo("\n2. Install Rails and update rbenv:")
+            click.echo(command_text("gem install rails -v 7.1.0"))
+            click.echo(command_text("rbenv rehash  # Make Rails executable available"))
+            
+            click.echo("\n3. Verify Rails installation:")
+            click.echo(command_text("rails -v"))
+            return
+    except FileNotFoundError:
+        click.echo(error_text("\n❌ Rails is not installed!"))
+        click.echo("\nPlease install Rails and update rbenv:")
+        click.echo(command_text("gem install rails -v 7.1.0"))
+        click.echo(command_text("rbenv rehash  # Make Rails executable available"))
+        return
+
+    # Check if Bundler is installed
+    try:
+        bundler_version = subprocess.run(['bundle', '-v'], capture_output=True, text=True).stdout
+        click.echo(f"✓ Bundler detected: {bundler_version.strip()}")
+    except FileNotFoundError:
+        click.echo(error_text("\n❌ Bundler is not installed!"))
+        click.echo("\nPlease install Bundler:")
+        click.echo(command_text("gem install bundler"))
+        return
+
+    # Check if PostgreSQL is installed and running
+    try:
+        psql_version = subprocess.run(['psql', '--version'], capture_output=True, text=True).stdout
+        click.echo(f"✓ PostgreSQL detected: {psql_version.strip()}")
+        
+        # Check if PostgreSQL service is running
+        pg_status = subprocess.run(['brew', 'services', 'list'], capture_output=True, text=True).stdout
+        if 'postgresql@14' not in pg_status or 'started' not in pg_status:
+            click.echo(error_text("\n⚠️  PostgreSQL service is not running!"))
+            click.echo("\nStart PostgreSQL service with:")
+            click.echo(command_text("brew services start postgresql@14"))
+            click.echo("\nThen wait a few seconds and try again.")
+            return
+        
+        click.echo("✓ PostgreSQL service is running")
+        
+    except FileNotFoundError:
+        click.echo(error_text("\n⚠️  PostgreSQL is not installed!"))
+        click.echo("\nPlease install and start PostgreSQL:")
+        click.echo(command_text("brew install postgresql@14"))
+        click.echo(command_text("brew services start postgresql@14"))
+        click.echo("\nThen wait a few seconds and try again.")
+        return
+
+    # Check and fix rbenv permissions before creating project
+    try:
+        rbenv_root = subprocess.run(['rbenv', 'root'], capture_output=True, text=True).stdout.strip()
+        click.echo("\n🔧 Checking rbenv permissions...")
+        
+        # Fix permissions for the entire rbenv directory
+        subprocess.run([
+            'sudo', 'chown', '-R', os.environ['USER'], rbenv_root
+        ], check=True)
+        
+        # Fix permissions for the gems directory
+        gems_dir = os.path.join(rbenv_root, "versions", "3.2.0", "lib", "ruby", "gems")
+        if os.path.exists(gems_dir):
+            subprocess.run([
+                'chmod', '-R', '755', gems_dir
+            ], check=True)
+            
+        click.echo("✓ Fixed rbenv permissions")
+        
+    except subprocess.CalledProcessError as e:
+        click.echo(error_text(f"\n❌ Error fixing permissions: {e}"))
+        click.echo("\nPlease run these commands manually:")
+        click.echo(command_text(f"sudo chown -R $USER {rbenv_root}"))
+        click.echo(command_text(f"chmod -R 755 {gems_dir}"))
+        return
+    except Exception as e:
+        click.echo(error_text(f"\n❌ Unexpected error checking permissions: {e}"))
+        return
+
+    click.echo(f"\n🚀 Creating new Ruby on Rails project: {name}")
+    click.echo("=" * 50)
+
+    try:
+        # Create new Rails project
+        click.echo("\n📦 Creating Rails project...")
+        env = os.environ.copy()
+        env['RBENV_VERSION'] = '3.2.0'  # Set Ruby version for this process
+        
+        subprocess.run([
+            'rails', 'new', name,
+            '--database=postgresql',
+            '--api',
+            '--skip-git',  # We'll use aske init
+            '--skip-bundle',  # We'll run bundle install later
+            '--rails-version=7.1.0'  # Specify Rails version explicitly
+        ], check=True, env=env)
+
+        # Create additional files
+        files = {
+            'Gemfile': RubyModel.get_gemfile(),
+            '.rubocop.yml': RubyModel.get_rubocop(),
+            '.rspec': RubyModel.get_rspec(),
+            '.env': RubyModel.get_env(),
+            'README.md': RubyModel.get_readme(name),
+            'config/application.rb': RubyModel.get_application_rb(name)
+        }
+
+        for file_path, content in files.items():
+            full_path = os.path.join(project_path, file_path)
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            with open(full_path, 'w') as f:
+                f.write(content)
+            click.echo(f"📄 Created {file_path}")
+
+        # Install dependencies
+        click.echo("\n📦 Installing dependencies...")
+        subprocess.run(['bundle', 'install'], cwd=project_path, check=True, env=env)
+
+        # Create a script to set up the environment
+        setup_script = '''#!/bin/bash
+eval "$(rbenv init -)"
+rbenv shell 3.2.0
+'''
+        setup_script_path = os.path.join(project_path, 'setup.sh')
+        with open(setup_script_path, 'w') as f:
+            f.write(setup_script)
+        os.chmod(setup_script_path, 0o755)  # Make executable
+
+        click.echo("\n✨ Ruby on Rails project created successfully!")
+        click.echo("\nNext steps:")
+        click.echo(command_text(f"cd {name}"))
+        click.echo(command_text("source setup.sh               # Set up Ruby environment"))
+        click.echo("\nMake sure PostgreSQL is running:")
+        click.echo(command_text("brew services list           # Check PostgreSQL status"))
+        click.echo(command_text("brew services start postgresql@14  # Start if needed"))
+        click.echo("\nThen set up the database:")
+        click.echo(command_text("rails db:create db:migrate   # Setup database"))
+        click.echo(command_text("rails server                # Start the server"))
+        click.echo(command_text("aske init                  # Initialize git repository"))
+
+    except subprocess.CalledProcessError as e:
+        click.echo(error_text(f"\n❌ Error creating Rails project: {e}"), err=True)
         return
     except Exception as e:
         click.echo(error_text(f"\n❌ Unexpected error: {e}"), err=True)

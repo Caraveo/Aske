@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aske"
-version = "0.1.3"
+version = "0.4.0"
 description = "Platform Architect Development Framework"
 readme = "README.md"
 authors = [{ name = "ASKE Team" }]
@@ -31,6 +31,10 @@ Homepage = "https://github.com/caraveo/aske"
 [project.scripts]
 aske = "aske.cli:main"
 aske-activate = "aske.cli:activate"
+
+[tool.setuptools]
+packages = ["aske", "aske.core", "aske.core.models"]
+package-dir = {"" = "src"}
 
 [tool.setuptools.package-data]
 aske = ["scripts/*"]

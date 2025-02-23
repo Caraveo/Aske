@@ -2,7 +2,7 @@
 ASKE - Platform Architect Development Framework
 """
 
-__version__ = "0.1.3"
+__version__ = "0.4.0"
 
 from .core import Platform
 

@@ -1,4 +1,5 @@
 LICENSE
+MANIFEST.in
 README.md
 pyproject.toml
 setup.cfg
@@ -12,3 +13,10 @@ src/aske.egg-info/requires.txt
 src/aske.egg-info/top_level.txt
 src/aske/core/__init__.py
 src/aske/core/models.py
+src/aske/core/models/__init__.py
+src/aske/core/models/express.py
+src/aske/core/models/gitignore.py
+src/aske/core/models/next.py
+src/aske/core/models/node.py
+src/aske/core/models/python.py
+src/aske/core/models/ruby.py

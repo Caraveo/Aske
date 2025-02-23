@@ -33,6 +33,21 @@ To create a new Python project, use the following command:
 
 ```aske python project-name```
 
+Available commands:
+
+```aske node project-name```
+
+```aske next project-name```
+
+```aske express project-name```
+
+```aske ruby project-name```
+
+Initialize a projects git repository and add a .gitignore file:
+
+```aske init```
+
+
 ### This command will:
 	- Create a new project directory named project-name.
 	- Set up a Python virtual environment inside the directory.
@@ -42,7 +57,6 @@ To create a new Python project, use the following command:
 ## Future Framework Support
 
 ### ASKE is built with extensibility in mind. Planned future enhancements include support for:
-	- Node.js: (e.g., Express, NestJS)
 	- Ruby: (e.g., Rails, Sinatra)
 	- Java: (e.g., Spring Boot)
 	- Go: (e.g., Gin, Echo)
