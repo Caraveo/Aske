@@ -33,6 +33,23 @@ To create a new Python project, use the following command:
 
 ```aske python project-name```
 
+[![Video: Python Environment](https://youtu.be/oPxNfZsv1z8)
+
+
+### This command will:
+	- Create a new project directory named project-name.
+	- Set up a Python virtual environment inside the directory.
+	- Generate essential project files (e.g., requirements.txt, .env, and a starter app.py).
+	- Initialize a Git repository for version control.
+
+## Future Framework Support
+
+### ASKE is built with extensibility in mind. Planned future enhancements include support for:
+	- Java: (e.g., Spring Boot)
+	- Go: (e.g., Gin, Echo)
+	- PHP: (e.g., Laravel)
+
+
 Available commands:
 
 ```aske node project-name```
@@ -47,20 +64,6 @@ Initialize a projects git repository and add a .gitignore file:
 
 ```aske init```
 
-
-### This command will:
-	- Create a new project directory named project-name.
-	- Set up a Python virtual environment inside the directory.
-	- Generate essential project files (e.g., requirements.txt, .env, and a starter app.py).
-	- Initialize a Git repository for version control.
-
-## Future Framework Support
-
-### ASKE is built with extensibility in mind. Planned future enhancements include support for:
-	- Ruby: (e.g., Rails, Sinatra)
-	- Java: (e.g., Spring Boot)
-	- Go: (e.g., Gin, Echo)
-	- PHP: (e.g., Laravel)
 
 These additions will make ASKE a versatile initializer for a wide range of development environments.
 
