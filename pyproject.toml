@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "aske"
-version = "0.5.0"
+version = "0.5.1"
 description = "Platform Architect Development Framework"
 readme = "README.md"
 authors = [{ name = "ASKE Team" }]
@@ -34,7 +34,7 @@ aske-activate = "aske.cli:activate"
 
 [tool.poetry]
 name = "aske"
-version = "0.5.0"
+version = "0.5.1"
 description = "Platform Architect Development Framework"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
