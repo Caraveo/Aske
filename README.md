@@ -1,17 +1,37 @@
 # ASKE - Platform Architect Development Framework
 
-ASKE is a command-line tool designed to simplify and accelerate the process of initializing and managing development projects. Initially, ASKE focuses on Python, providing an automated way to set up a Python environment complete with virtual environments, git initialization, and essential project files. This allows developers to focus on coding rather than repetitive setup tasks.
+ASKE is an opinionated command-line tool designed to simplify and accelerate the process of initializing and managing development projects. By being opinionated, ASKE makes specific technology choices to fast-track framework creation:
+
+- Python: Uses venv for virtual environments
+- Ruby: Uses Rails with rbenv
+- Java: Uses Spring Boot with Maven
+- Node.js: Uses Express.js or Next.js
+- Database: Defaults to PostgreSQL where applicable
+
+> **Note:** Currently, ASKE is optimized for macOS environments, particularly those running on Apple Silicon. Future versions will aim to provide better cross-platform support and modularity.
 
 ## Why ASKE?
 
 In modern development, setting up a new project can be time-consuming with manual steps for configuration and environment setup. ASKE was created to:
 
 - **Automate Repetitive Tasks:** Quickly initialize a new project with a standardized structure.
-
 - **Boost Productivity:** Reduce setup time so you can concentrate on development.
+- **Enforce Best Practices:** Make opinionated choices that follow industry standards.
 
-- **Lay the Foundation for Multi-Framework Support:** While ASKE currently focuses on Python, future versions will support additional frameworks such as Node.js, 
-Ruby, Java, Go, and PHP.
+## Current Target Audience
+
+- **Platform Support:** Primary focus on macOS/Apple Silicon
+- **Package Managers:** Uses Homebrew for system dependencies
+- **Fixed Choices:** Limited flexibility in technology selection
+- **Environment Management:** Specific choices (venv, rbenv, etc.)
+
+## Future Plans
+
+We plan to make ASKE more modular and flexible in future releases:
+- Support for multiple operating systems
+- Configurable technology choices
+- Alternative package manager support
+- Pluggable architecture for custom pipelines
 
 ## Installation
 
@@ -59,6 +79,9 @@ Available commands:
 ```aske express project-name```
 
 ```aske ruby project-name```
+
+```aske java project-name```
+
 
 Initialize a projects git repository and add a .gitignore file:
 

@@ -101,7 +101,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class HelloController {{
-    @GetMapping("/hello")
+    @GetMapping(value = {{"/", "/hello"}})
     public String hello() {{
         return "Hello, World!";
     }}
@@ -164,6 +164,12 @@ server.port=8080
 
 # Actuator Configuration
 management.endpoints.web.exposure.include=health,info,metrics
+
+# Error Handling
+server.error.whitelabel.enabled=false
+server.error.include-message=always
+server.error.include-binding-errors=always
+server.error.include-stacktrace=never
 
 # Logging Configuration
 logging.level.root=INFO
@@ -296,4 +302,23 @@ Run checkstyle:
 ```bash
 ./mvnw checkstyle:check
 ```
+'''
+
+    @staticmethod
+    def get_error_controller(name):
+        """Generate custom error controller"""
+        package_name = name.replace("-", "").lower()
+        return f'''package com.example.{package_name}.controller;
+
+import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class CustomErrorController implements ErrorController {{
+    @RequestMapping("/error")
+    public String handleError() {{
+        return "Error occurred! Please try /hello endpoint.";
+    }}
+}}
 ''' 

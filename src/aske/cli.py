@@ -696,6 +696,7 @@ def java(name):
             'pom.xml': SpringModel.get_pom_xml(name),
             os.path.join(package_path, 'Application.java'): SpringModel.get_application_class(name),
             os.path.join(package_path, 'controller', 'HelloController.java'): SpringModel.get_hello_controller(name),
+            os.path.join(package_path, 'controller', 'CustomErrorController.java'): SpringModel.get_error_controller(name),
             os.path.join(test_path, 'ApplicationTests.java'): SpringModel.get_application_test(name),
             os.path.join(test_path, 'controller', 'HelloControllerTest.java'): SpringModel.get_hello_controller_test(name),
             os.path.join(resources_path, 'application.properties'): SpringModel.get_application_properties(),
@@ -719,7 +720,9 @@ def java(name):
         click.echo(command_text("./mvnw clean install  # Build the project"))
         click.echo(command_text("./mvnw spring-boot:run  # Run the application"))
         click.echo(command_text("aske init  # Initialize git repository"))
-        click.echo("\nThen visit: http://localhost:8080/hello")
+        click.echo("\nThen visit either:")
+        click.echo("http://localhost:8080")
+        click.echo("http://localhost:8080/hello")
 
     except subprocess.CalledProcessError as e:
         click.echo(error_text(f"\n❌ Error creating Spring Boot project: {e}"), err=True)
