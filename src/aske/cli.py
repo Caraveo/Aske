@@ -4,6 +4,7 @@ import subprocess
 import sys
 import shutil
 import time
+import re
 from aske import __version__
 from aske.core.models import (
     GitignoreModel,
@@ -803,37 +804,46 @@ def php(name):
             
             # Now check PHP version
             php_version = subprocess.run([php_path, '-v'], capture_output=True, text=True).stdout
-            if '8.2' not in php_version:
-                click.echo(error_text("\n❌ PHP 8.2 is required but not found!"))
-                click.echo("\nPlease install PHP 8.2:")
-                click.echo(command_text("brew install php@8.2"))
-                click.echo("\nThen add PHP to your PATH:")
-                click.echo(command_text('echo \'export PATH="/opt/homebrew/opt/php@8.2/bin:$PATH"\' >> ~/.zshrc'))
-                click.echo(command_text('echo \'export PATH="/opt/homebrew/opt/php@8.2/sbin:$PATH"\' >> ~/.zshrc'))
-                click.echo(command_text("source ~/.zshrc"))
-                click.echo("\nVerify installation:")
-                click.echo(command_text("which php  # Should show /opt/homebrew/opt/php@8.2/bin/php"))
-                click.echo(command_text("php -v    # Should show PHP 8.2.x"))
-                click.echo("\nConfigure PHP with Apache:")
-                click.echo(command_text("echo 'LoadModule php_module /opt/homebrew/opt/php@8.2/lib/httpd/modules/libphp.so' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf"))
-                click.echo(command_text('echo \'<FilesMatch \\.php$>\' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
-                click.echo(command_text('echo "    SetHandler application/x-httpd-php" | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
-                click.echo(command_text('echo "</FilesMatch>" | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
-                click.echo("\nStart PHP service:")
-                click.echo(command_text("brew services start php@8.2"))
-                click.echo(command_text("brew services restart httpd"))
+            version_match = re.search(r'PHP (\d+\.\d+)', php_version)
+            if version_match:
+                version = float(version_match.group(1))
+                if version < 8.2:
+                    click.echo(error_text(f"\n❌ PHP version {version} is too old. Version 8.2 or higher is required."))
+                    click.echo("\nPlease install PHP 8.2:")
+                    click.echo(command_text("brew install php@8.2"))
+                    click.echo("\nThen add PHP to your PATH:")
+                    click.echo(command_text('echo \'export PATH="/opt/homebrew/opt/php@8.2/bin:$PATH"\' >> ~/.zshrc'))
+                    click.echo(command_text('echo \'export PATH="/opt/homebrew/opt/php@8.2/sbin:$PATH"\' >> ~/.zshrc'))
+                    click.echo(command_text("source ~/.zshrc"))
+                    click.echo("\nVerify installation:")
+                    click.echo(command_text("which php  # Should show /opt/homebrew/opt/php@8.2/bin/php"))
+                    click.echo(command_text("php -v    # Should show PHP 8.2.x"))
+                    click.echo("\nConfigure PHP with Apache:")
+                    click.echo(command_text("echo 'LoadModule php_module /opt/homebrew/opt/php@8.2/lib/httpd/modules/libphp.so' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf"))
+                    click.echo(command_text('echo \'<FilesMatch \\.php$>\' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
+                    click.echo(command_text('echo "    SetHandler application/x-httpd-php" | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
+                    click.echo(command_text('echo "</FilesMatch>" | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
+                    click.echo("\nStart PHP service:")
+                    click.echo(command_text("brew services start php@8.2"))
+                    click.echo(command_text("brew services restart httpd"))
+                    return
+                click.echo(f"✓ PHP detected: {php_version.split('\\n')[0]}")
+            else:
+                click.echo(error_text("\n❌ Could not determine PHP version"))
                 return
-            click.echo(f"✓ PHP detected: {php_version.split('\\n')[0]}")
             
         except subprocess.CalledProcessError:
             raise FileNotFoundError("PHP not found")
         
         # Check if PHP service is running
         php_status = subprocess.run(['brew', 'services', 'list'], capture_output=True, text=True).stdout
-        if 'php@8.2' not in php_status or 'started' not in php_status:
+        if 'php@8.2' not in php_status and 'php' not in php_status:
             click.echo(error_text("\n⚠️  PHP service is not running!"))
             click.echo("\nStart PHP service with:")
-            click.echo(command_text("brew services start php@8.2"))
+            if 'php@8.2' in subprocess.run(['brew', 'list'], capture_output=True, text=True).stdout:
+                click.echo(command_text("brew services start php@8.2"))
+            else:
+                click.echo(command_text("brew services start php"))
             return
             
         click.echo("✓ PHP service is running")
@@ -876,8 +886,7 @@ def php(name):
         # Create Laravel project using Composer
         click.echo("\n📦 Creating Laravel project...")
         subprocess.run([
-            'composer', 'create-project', 'laravel/laravel', name,
-            '--prefer-dist', '--no-interaction'
+            'composer', 'create-project', '--prefer-dist', 'laravel/laravel', name
         ], check=True)
 
         # Create HelloController
@@ -900,23 +909,14 @@ def php(name):
             f.write("\nRoute::get('/hello', [App\\Http\\Controllers\\HelloController::class, 'index']);")
         click.echo("✓ Added hello route")
 
-        # Update composer.json
-        composer_path = os.path.join(project_path, 'composer.json')
-        with open(composer_path, 'w') as f:
-            f.write(LaravelModel.get_composer_json(name))
-        click.echo("✓ Updated composer.json")
-
         # Update .env
         env_path = os.path.join(project_path, '.env')
-        with open(env_path, 'w') as f:
-            f.write(LaravelModel.get_env())
-        click.echo("✓ Updated .env")
-
-        # Update phpunit.xml
-        phpunit_path = os.path.join(project_path, 'phpunit.xml')
-        with open(phpunit_path, 'w') as f:
-            f.write(LaravelModel.get_phpunit_xml())
-        click.echo("✓ Updated phpunit.xml")
+        if os.path.exists(env_path):
+            with open(env_path, 'w') as f:
+                f.write(LaravelModel.get_env())
+            click.echo("✓ Updated .env")
+        else:
+            click.echo("✓ Using default .env")
 
         # Update README.md
         readme_path = os.path.join(project_path, 'README.md')
@@ -924,15 +924,13 @@ def php(name):
             f.write(LaravelModel.get_readme(name))
         click.echo("✓ Updated README.md")
 
-        # Install dependencies
-        click.echo("\n📦 Installing dependencies...")
-        subprocess.run(['composer', 'install'], cwd=project_path, check=True)
-
+        # Run post-install commands
+        click.echo("\n📦 Running post-install commands...")
+        subprocess.run(['php', 'artisan', 'key:generate'], cwd=project_path, check=True)
+        
         click.echo("\n✨ Laravel project created successfully!")
         click.echo("\nNext steps:")
         click.echo(command_text(f"cd {name}"))
-        click.echo(command_text("cp .env.example .env  # Copy environment file"))
-        click.echo(command_text("php artisan key:generate  # Generate application key"))
         click.echo(command_text("php artisan serve  # Start development server"))
         click.echo(command_text("aske init  # Initialize git repository"))
         click.echo("\nThen visit: http://localhost:8000/hello")
