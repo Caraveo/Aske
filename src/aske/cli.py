@@ -5,6 +5,7 @@ import sys
 import shutil
 import time
 import re
+import importlib
 from aske import __version__
 from aske.core.models import (
     GitignoreModel,
@@ -14,7 +15,8 @@ from aske.core.models import (
     ExpressModel,
     RubyModel,
     SpringModel,
-    LaravelModel
+    LaravelModel,
+    GoBaseModel
 )
 from aske.core.dynamo.mysql import MySQLModel
 from aske.core.dynamo.postgresql import PostgreSQLModel
@@ -1232,12 +1234,115 @@ def php(name):
         click.echo(command_text("aske init  # Initialize git repository"))
         click.echo("\nThen visit: http://localhost:8000/hello")
 
+        click.echo("\n⚠️  Important:")
+        click.echo("When you're done developing, remember to stop the Apache server:")
+        click.echo(command_text("brew services stop httpd"))
+        click.echo("This prevents port conflicts and frees up system resources.")
+
     except subprocess.CalledProcessError as e:
         click.echo(error_text(f"\n❌ Error creating Laravel project: {e}"), err=True)
         return
     except Exception as e:
         click.echo(error_text(f"\n❌ Unexpected error: {e}"), err=True)
         return
+
+@main.command()
+@click.argument('name')
+@click.option('--framework', type=click.Choice(['pure', 'gin', 'echo', 'fiber', 'chi', 'buffalo', 'revel']), 
+              help='Choose a Go web framework', default='gin')
+def go(name, framework):
+    """Create a new Go project and set up its structure"""
+    project_path = os.path.abspath(name)
+    
+    click.echo(f"\n🚀 Creating new Go project with {framework.title()}: {name}")
+    click.echo("=" * 50)
+
+    # Import the appropriate model based on framework choice
+    if framework == 'pure':
+        from aske.core.models.go import GoModel
+        model_class = GoModel
+    else:
+        try:
+            module = importlib.import_module(f'aske.core.models.go.{framework}')
+            model_class = getattr(module, f'{framework.title()}Model')
+        except (ImportError, AttributeError):
+            click.echo(error_text(f"\n❌ Framework {framework} not yet supported"))
+            click.echo("Falling back to Gin framework")
+            from aske.core.models.go.gin import GinModel
+            model_class = GinModel
+
+    # Check golangci-lint installation
+    try:
+        subprocess.run(['golangci-lint', '--version'], capture_output=True)
+        click.echo("✓ golangci-lint is installed")
+    except FileNotFoundError:
+        click.echo("\nInstalling golangci-lint for code quality...")
+        try:
+            subprocess.run(['brew', 'install', 'golangci-lint'], check=True)
+            click.echo("✓ golangci-lint installed successfully")
+        except subprocess.CalledProcessError as e:
+            click.echo(error_text(f"\n❌ Error installing golangci-lint: {e}"))
+            click.echo(command_text("\nInstall manually with: brew install golangci-lint"))
+            return
+
+    # Check if project already exists
+    if os.path.exists(project_path):
+        click.echo(error_text(f"❌ Error: Project directory '{name}' already exists"), err=True)
+        click.echo(error_text("Please choose a different name or remove the existing directory"), err=True)
+        sys.exit(1)
+
+    # Create project directory and structure
+    click.echo(f"\n📁 Creating project directory: {project_path}")
+    os.makedirs(project_path, exist_ok=False)
+    
+    # Create Go project structure
+    model_class.create_project_structure(project_path)
+    click.echo("✓ Created project structure")
+
+    # Create project files
+    files = {
+        'go.mod': model_class.get_mod_file(name),
+        'cmd/main/main.go': model_class.get_main_file(),
+        '.env': model_class.get_env(),
+        '.gitignore': model_class.get_gitignore(),
+        'README.md': model_class.get_readme(name),
+        'Makefile': model_class.get_makefile()
+    }
+
+    for file_path, content in files.items():
+        full_path = os.path.join(project_path, file_path)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        click.echo(f"📄 Creating {file_path}")
+        with open(full_path, 'w') as f:
+            f.write(content)
+
+    # Initialize go modules and download dependencies
+    click.echo("\n📦 Installing dependencies...")
+    try:
+        subprocess.run(['go', 'mod', 'download'], cwd=project_path, check=True)
+        click.echo("✓ Dependencies installed")
+    except subprocess.CalledProcessError as e:
+        click.echo(error_text(f"\n❌ Error installing dependencies: {e}"))
+        click.echo("Try running 'go mod download' manually after setup")
+
+    click.echo("\n✨ Go project created successfully!")
+    
+    # Show Go best practices and next steps
+    click.echo("\n📚 Go Development Best Practices:")
+    click.echo("1. Use 'go fmt' to format your code")
+    click.echo("2. Run 'golangci-lint run' before commits")
+    click.echo("3. Write tests for your packages")
+    click.echo("4. Follow the standard project layout")
+    click.echo("5. Use go modules for dependency management")
+    
+    click.echo("\n🚀 Next steps:")
+    click.echo(command_text(f"cd {name}"))
+    click.echo(command_text("go mod tidy        # Clean up dependencies"))
+    click.echo(command_text("go run cmd/main/main.go  # Run the application"))
+    click.echo(command_text("make test          # Run tests"))
+    click.echo(command_text("make build         # Build the application"))
+    click.echo(command_text("golangci-lint run  # Check code quality"))
+    click.echo(command_text("aske init          # Initialize git repository"))
 
 if __name__ == '__main__':
     main()

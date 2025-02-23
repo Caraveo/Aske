@@ -8,6 +8,7 @@ from .express import ExpressModel
 from .ruby import RubyModel
 from .spring import SpringModel
 from .laravel import LaravelModel
+from .go import GoBaseModel  # Import just what we need
 
 __all__ = [
     'GitignoreModel',
@@ -17,5 +18,6 @@ __all__ = [
     'ExpressModel',
     'RubyModel',
     'SpringModel',
-    'LaravelModel'
+    'LaravelModel',
+    'GoBaseModel'
 ] 
