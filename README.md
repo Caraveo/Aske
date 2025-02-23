@@ -40,7 +40,7 @@ To create a new Python project, use the following command:
 	- Create a new project directory named project-name.
 	- Set up a Python virtual environment inside the directory.
 	- Generate essential project files (e.g., requirements.txt, .env, and a starter app.py).
-	- Initialize a Git repository for version control.
+	- Provide a starting point for your project with a basic Python application.
 
 ## Future Framework Support
 

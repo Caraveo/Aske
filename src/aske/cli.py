@@ -11,7 +11,8 @@ from aske.core.models import (
     NodejsModel,
     NextjsModel,
     ExpressModel,
-    RubyModel
+    RubyModel,
+    SpringModel
 )
 
 # Add color constants
@@ -622,6 +623,106 @@ rbenv shell 3.2.0
 
     except subprocess.CalledProcessError as e:
         click.echo(error_text(f"\n❌ Error creating Rails project: {e}"), err=True)
+        return
+    except Exception as e:
+        click.echo(error_text(f"\n❌ Unexpected error: {e}"), err=True)
+        return
+
+@main.command()
+@click.argument('name')
+def java(name):
+    """Create a new Spring Boot project"""
+    project_path = os.path.abspath(name)
+    
+    # Check if project already exists
+    if os.path.exists(project_path):
+        click.echo(error_text(f"❌ Error: Project directory '{name}' already exists"), err=True)
+        click.echo(error_text("Please choose a different name or remove the existing directory"), err=True)
+        sys.exit(1)
+    
+    # Check if Java is installed
+    try:
+        # Java outputs version to stderr by default
+        java_version = subprocess.run(['java', '-version'], capture_output=True, text=True).stderr
+        if 'Unable to locate a Java Runtime' in java_version:
+            click.echo(error_text("\n❌ Java Runtime not found!"))
+            click.echo("\nOpenJDK is installed but not properly linked. Please run these commands:")
+            click.echo("\n1. Create the required directories:")
+            click.echo(command_text("sudo mkdir -p /Library/Java/JavaVirtualMachines"))
+            click.echo("\n2. Create the symlink (you may need to enter your password):")
+            click.echo(command_text("sudo ln -sfn $(brew --prefix)/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk"))
+            click.echo("\n3. Add Java to your PATH:")
+            click.echo(command_text('echo \'export PATH="$(brew --prefix)/opt/openjdk/bin:$PATH"\' >> ~/.zshrc'))
+            click.echo(command_text("source ~/.zshrc"))
+            click.echo("\n4. Verify installation:")
+            click.echo(command_text("java --version"))
+            return
+        elif java_version:
+            click.echo(f"✓ Java detected: {java_version.split('\\n')[0]}")
+        else:
+            raise FileNotFoundError("Java not found")
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        click.echo(error_text("\n❌ Java is not installed!"))
+        click.echo("\nPlease install Java first:")
+        click.echo(command_text("brew install openjdk"))
+        click.echo("\nThen follow the steps above to link Java properly.")
+        return
+
+    # Check if Maven is installed
+    try:
+        mvn_version = subprocess.run(['mvn', '-version'], capture_output=True, text=True).stdout
+        click.echo(f"✓ Maven detected: {mvn_version.split('\\n')[0]}")
+    except FileNotFoundError:
+        click.echo(error_text("\n❌ Maven is not installed!"))
+        click.echo("\nPlease install Maven first:")
+        click.echo(command_text("brew install maven"))
+        return
+
+    click.echo(f"\n🚀 Creating new Spring Boot project: {name}")
+    click.echo("=" * 50)
+
+    try:
+        # Create project structure
+        os.makedirs(project_path)
+        package_path = os.path.join(project_path, "src", "main", "java", "com", "example", name.lower())
+        test_path = os.path.join(project_path, "src", "test", "java", "com", "example", name.lower())
+        resources_path = os.path.join(project_path, "src", "main", "resources")
+        
+        for path in [package_path, test_path, resources_path]:
+            os.makedirs(os.path.join(path, "controller"), exist_ok=True)
+            
+        # Create project files
+        files = {
+            'pom.xml': SpringModel.get_pom_xml(name),
+            os.path.join(package_path, 'Application.java'): SpringModel.get_application_class(name),
+            os.path.join(package_path, 'controller', 'HelloController.java'): SpringModel.get_hello_controller(name),
+            os.path.join(test_path, 'ApplicationTests.java'): SpringModel.get_application_test(name),
+            os.path.join(test_path, 'controller', 'HelloControllerTest.java'): SpringModel.get_hello_controller_test(name),
+            os.path.join(resources_path, 'application.properties'): SpringModel.get_application_properties(),
+            'README.md': SpringModel.get_readme(name)
+        }
+
+        for file_path, content in files.items():
+            full_path = os.path.join(project_path, file_path)
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            with open(full_path, 'w') as f:
+                f.write(content)
+            click.echo(f"📄 Created {file_path}")
+
+        # Download Maven wrapper
+        click.echo("\n📦 Setting up Maven wrapper...")
+        subprocess.run(['mvn', '-N', 'wrapper:wrapper'], cwd=project_path, check=True)
+
+        click.echo("\n✨ Spring Boot project created successfully!")
+        click.echo("\nNext steps:")
+        click.echo(command_text(f"cd {name}"))
+        click.echo(command_text("./mvnw clean install  # Build the project"))
+        click.echo(command_text("./mvnw spring-boot:run  # Run the application"))
+        click.echo(command_text("aske init  # Initialize git repository"))
+        click.echo("\nThen visit: http://localhost:8080/hello")
+
+    except subprocess.CalledProcessError as e:
+        click.echo(error_text(f"\n❌ Error creating Spring Boot project: {e}"), err=True)
         return
     except Exception as e:
         click.echo(error_text(f"\n❌ Unexpected error: {e}"), err=True)
