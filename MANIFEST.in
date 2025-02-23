@@ -3,4 +3,5 @@ include README.md
 include pyproject.toml
 recursive-include src/aske *.py
 recursive-include src/aske/core *.py
-recursive-include src/aske/core/models *.py 
+recursive-include src/aske/core/models *.py
+recursive-include src/aske/core/dynamo *.py 

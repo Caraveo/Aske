@@ -16,6 +16,9 @@ from aske.core.models import (
     SpringModel,
     LaravelModel
 )
+from aske.core.dynamo.mysql import MySQLModel
+from aske.core.dynamo.postgresql import PostgreSQLModel
+from aske.core.dynamo.mongodb import MongoDBModel
 
 # Add color constants
 RED = "\033[91m"
@@ -44,11 +47,304 @@ def change_directory(path):
         click.echo(f"❌ Error changing directory: {e}", err=True)
         return False
 
+# Define sol command group first
 @click.group()
+def sol():
+    """Database solution commands\n
+Available Solutions:\n
+  mysql       MySQL database (port 3306)\n
+  postgresql  PostgreSQL database (port 5432)\n
+  mongodb     MongoDB database (port 27017)\n
+\nCommands:\n
+  <solution> <name>         Create a specific database container\n
+  create [template]         Create a container from template\n
+  list                     List all solution containers\n
+  delete <name>            Delete a solution container\n
+\nExamples:\n
+  # Create database containers\n
+  aske sol mysql mydb            Create MySQL container 'mydb'\n
+  aske sol postgresql pgdb      Create PostgreSQL container 'pgdb'\n
+  aske sol mongodb mdb          Create MongoDB container 'mdb'\n
+\n  # Create from template\n
+  aske sol create               Create default container\n
+  aske sol create custom        Create from custom template\n
+\n  # Manage containers\n
+  aske sol list                 Show all containers\n
+  aske sol delete mydb         Delete container 'mydb'\n
+\nSolutions will be accessible at:\n
+  MySQL:       localhost:3306\n
+  PostgreSQL:  localhost:5432\n
+  MongoDB:     localhost:27017\n
+\nUse --help with any command for more information."""
+    pass
+
+# Direct database commands
+@sol.command()
+@click.argument('name')
+def mysql(name):
+    """Create a MySQL database container"""
+    create_database_container('mysql', name)
+
+@sol.command()
+@click.argument('name')
+def postgresql(name):
+    """Create a PostgreSQL database container"""
+    create_database_container('postgresql', name)
+
+@sol.command()
+@click.argument('name')
+def mongodb(name):
+    """Create a MongoDB database container"""
+    create_database_container('mongodb', name)
+
+# Template creation command
+@sol.command()
+@click.argument('template', default='default')
+def create(template):
+    """Create a container from template"""
+    click.echo("\n🗄️  ASKE Solution Template")
+    click.echo("=" * 50)
+    
+    if template == 'default':
+        click.echo("\nCreating default container...")
+        # Add default container creation logic here
+        name = f"lima-{int(time.time())}"
+        create_database_container('postgresql', name)  # Use PostgreSQL as default
+    else:
+        click.echo(f"\nCreating container from template: {template}")
+        # Add custom template logic here
+        click.echo("Custom templates coming soon!")
+
+def create_database_container(solution, name):
+    """Common function for creating database containers"""
+    click.echo("\n🗄️  ASKE Database Solution")
+    click.echo("=" * 50)
+
+    # Database mapping
+    db_choices = {
+        'mysql': ('MySQL', MySQLModel),
+        'postgresql': ('PostgreSQL', PostgreSQLModel),
+        'mongodb': ('MongoDB', MongoDBModel)
+    }
+
+    if solution not in db_choices:
+        click.echo(error_text(f"\n❌ Unknown database type: {solution}"))
+        click.echo("\nAvailable databases:")
+        for key, (db_name, _) in db_choices.items():
+            click.echo(f"- {db_name} ({key})")
+        return
+
+    db_name, db_model = db_choices[solution]
+    click.echo(f"\nSetting up {db_name} container: {name}")
+
+    # Check if Homebrew is installed
+    try:
+        subprocess.run(['brew', '--version'], capture_output=True, check=True)
+        click.echo("✓ Homebrew is installed")
+    except FileNotFoundError:
+        click.echo(error_text("\n❌ Homebrew is not installed!"))
+        click.echo("\nPlease install Homebrew first:")
+        click.echo(command_text('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'))
+        return
+
+    # Check if Lima is installed
+    try:
+        subprocess.run(['limactl', '--version'], capture_output=True, check=True)
+        click.echo("✓ Lima is installed")
+    except FileNotFoundError:
+        click.echo("\nInstalling Lima...")
+        try:
+            subprocess.run(['brew', 'install', 'lima'], check=True)
+            click.echo("✓ Lima installed successfully")
+        except subprocess.CalledProcessError as e:
+            click.echo(error_text(f"\n❌ Error installing Lima: {e}"))
+            return
+
+    # Set up Lima container with port forwarding
+    click.echo("\n📦 Setting up Lima container...")
+    
+    # Create Lima configuration file
+    config_path = os.path.expanduser(f'~/.lima/{name}.yaml')
+    if os.path.exists(config_path):
+        click.echo(error_text(f"\n❌ Container '{name}' already exists!"))
+        return
+
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    
+    # Get database-specific port configuration
+    config = db_model.get_lima_config()
+    
+    # Get default port for the chosen database
+    db_ports = {
+        'mysql': 3306,
+        'postgresql': 5432,
+        'mongodb': 27017
+    }
+    db_port = db_ports[solution]
+    
+    # Add port forwarding to config if not already present
+    if 'portForwards:' not in config:
+        config += f'''
+portForwards:
+- guestPort: {db_port}
+  hostPort: {db_port}
+'''
+    
+    with open(config_path, 'w') as f:
+        f.write(config)
+
+    try:
+        subprocess.run(['limactl', 'start', '--name', name], check=True)
+        click.echo("\n✨ Lima container created successfully!")
+        click.echo("\nContainer management:")
+        click.echo(db_model.get_lima_instructions())
+        click.echo(f"\nDatabase is accessible at localhost:{db_port}")
+    except subprocess.CalledProcessError as e:
+        click.echo(error_text(f"\n❌ Error creating Lima container: {e}"))
+        return
+
+    click.echo("\n🎉 Database solution ready!")
+
+@sol.command()
+def list():
+    """List all database solution containers"""
+    try:
+        # Check if Lima is installed
+        subprocess.run(['limactl', '--version'], capture_output=True, check=True)
+    except FileNotFoundError:
+        click.echo(error_text("\n❌ Lima is not installed. No containers to list."))
+        return
+
+    try:
+        # Get list of Lima instances
+        result = subprocess.run(['limactl', 'list'], capture_output=True, text=True, check=True)
+        
+        if not result.stdout.strip():
+            click.echo("\nNo solution containers found.")
+            return
+
+        click.echo("\n📊 Database Solutions")
+        click.echo("=" * 50)
+        click.echo(result.stdout)
+        
+        # Show additional info for running containers
+        for line in result.stdout.splitlines()[1:]:  # Skip header
+            if line.strip():
+                name = line.split()[0]
+                try:
+                    status = subprocess.run(
+                        ['limactl', 'shell', name, 'systemctl', 'status'],
+                        capture_output=True,
+                        text=True
+                    )
+                    if status.returncode == 0:
+                        click.echo(f"\n{name} services:")
+                        click.echo(status.stdout)
+                except:
+                    pass
+
+    except subprocess.CalledProcessError as e:
+        click.echo(error_text(f"\n❌ Error listing containers: {e}"))
+
+@sol.command()
+@click.argument('name')
+def delete(name):
+    """Delete a database solution container"""
+    try:
+        # Check if container exists
+        result = subprocess.run(['limactl', 'list'], capture_output=True, text=True, check=True)
+        containers = [line.split()[0] for line in result.stdout.splitlines()[1:]]
+        
+        if name not in containers:
+            click.echo(error_text(f"\n❌ Container '{name}' not found."))
+            return
+
+        # Confirm deletion
+        if not click.confirm(f"\nAre you sure you want to delete the '{name}' container?"):
+            click.echo("Operation cancelled.")
+            return
+
+        # Stop container if running
+        subprocess.run(['limactl', 'stop', name], check=True)
+        
+        # Delete container
+        subprocess.run(['limactl', 'delete', name], check=True)
+        
+        # Remove configuration file
+        config_path = os.path.expanduser(f'~/.lima/{name}.yaml')
+        if os.path.exists(config_path):
+            os.remove(config_path)
+
+        click.echo(success_text(f"\n✨ Container '{name}' deleted successfully!"))
+
+    except subprocess.CalledProcessError as e:
+        click.echo(error_text(f"\n❌ Error deleting container: {e}"))
+
+# Add these classes before the command definitions
+class SolutionsGroup(click.Group):
+    def get_help(self, ctx):
+        return f"""Solutions:
+  sol       Database solution commands"""
+
+class FrameworksGroup(click.Group):
+    def get_help(self, ctx):
+        return f"""Frameworks:
+  python    Create a new Python project and set up its structure
+  express   Create a new Express.js API project
+  java      Create a new Spring Boot project
+  next      Create a new Next.js project with TypeScript
+  node      Create a new Node.js project and set up its structure
+  php       Create a new Laravel project
+  ruby      Create a new Ruby on Rails project"""
+
+class AuxiliaryGroup(click.Group):
+    def get_help(self, ctx):
+        return f"""Auxiliary:
+  activate  Find the Python virtual environment
+  init      Initialize git repository with .gitignore"""
+
+# Modify the main group to use custom formatting
+class MainGroup(click.Group):
+    def format_help(self, ctx, formatter):
+        formatter.write_paragraph()
+        formatter.write_text("ASKE - Platform Architect Development Framework for MacOS")
+        formatter.write_paragraph()
+        
+        # Solutions section
+        formatter.write_text("Solutions:")
+        formatter.write_text("  sol       Database solution commands")
+        formatter.write_paragraph()
+        
+        # Frameworks section
+        formatter.write_text("Frameworks:")
+        for cmd_name in ['python', 'express', 'java', 'next', 'node', 'php', 'ruby']:
+            cmd = self.get_command(ctx, cmd_name)
+            if cmd:
+                formatter.write_text(f"  {cmd_name:<8} {cmd.help}")
+        formatter.write_paragraph()
+        
+        # Auxiliary section
+        formatter.write_text("Auxiliary:")
+        for cmd_name in ['activate', 'init']:
+            cmd = self.get_command(ctx, cmd_name)
+            if cmd:
+                formatter.write_text(f"  {cmd_name:<8} {cmd.help}")
+        formatter.write_paragraph()
+        
+        # Options section
+        formatter.write_text("Options:")
+        formatter.write_text("  --version  Show the version and exit.")
+        formatter.write_text("  --help     Show this message and exit.")
+
+# Update the main group decorator to use the custom class
+@click.group(cls=MainGroup)
 @click.version_option(version=__version__)
 def main():
-    """ASKE - Platform Architect Development Framework"""
+    """ASKE - Platform Architect Development Framework for MacOS"""
     pass
+
+# Add sol command group to main
+main.add_command(sol)
 
 @main.command()
 @click.argument('name')
@@ -120,6 +416,7 @@ def python(name):
     click.echo(command_text("aske init    # To initialize git and create .gitignore"))
 
 @main.command()
+@click.argument('name')
 def activate():
     """Activate the Python virtual environment"""
     click.echo("\n🚀 Activating virtual environment...")
