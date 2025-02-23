@@ -33,7 +33,7 @@ To create a new Python project, use the following command:
 
 ```aske python project-name```
 
-[![Video: Python Environment](https://youtu.be/oPxNfZsv1z8)
+[![Video: Python Environment](media/python-env.png)](https://youtu.be/oPxNfZsv1z8)
 
 
 ### This command will:
