@@ -7,6 +7,7 @@ ASKE is an opinionated command-line tool designed to simplify and accelerate the
 - Java: Uses Spring Boot with Maven
 - Node.js: Uses Express.js or Next.js
 - Database: Defaults to PostgreSQL where applicable
+- PHP: Uses Laravel with Composer
 
 > **Note:** Currently, ASKE is optimized for macOS environments, particularly those running on Apple Silicon. Future versions will aim to provide better cross-platform support and modularity.
 
@@ -41,13 +42,13 @@ Install ASKE globally via pip:
 
 ```pip install aske```
 
-Using Homebrew
+### Using Homebrew
 
 Alternatively, if you prefer Homebrew (note that the Homebrew formula is pending integration into the official Homebrew-core):
 
 ```brew tap caraveo/aske && brew install aske```
 
-Usage
+### Usage
 
 To create a new Python project, use the following command:
 
@@ -65,9 +66,7 @@ To create a new Python project, use the following command:
 ## Future Framework Support
 
 ### ASKE is built with extensibility in mind. Planned future enhancements include support for:
-	- Java: (e.g., Spring Boot)
 	- Go: (e.g., Gin, Echo)
-	- PHP: (e.g., Laravel)
 
 
 Available commands:
@@ -82,11 +81,53 @@ Available commands:
 
 ```aske java project-name```
 
+```aske php project-name```
 
 Initialize a projects git repository and add a .gitignore file:
 
 ```aske init```
 
+## Aske Workflow Pipeline
+
+Below is a set of detailed instructions for how to use ASKE’s workflow effectively, particularly on macOS Apple Silicon:
+
+Initial Command Execution:
+
+```aske <template> <project>```
+
+This command initializes the project using the specified template (e.g., python, node, laravel, etc.) and creates the project directory with a standard structure.
+
+## Continuous Pipeline Execution
+
+The workflow is designed to be **iterative**. Once the command is executed, ASKE will continually monitor the installation status of the framework dependencies.
+
+If the required dependencies are missing or outdated, you will need to re-run the command.
+
+This pipeline loop continues until the pipeline detects that all required components for the specified framework are properly installed.
+
+	
+## Dependency Checks and Guidance
+
+ASKE performs automated checks to verify if essential dependencies (like the proper version of Java, PHP, Node, or other framework-specific tools) are installed on your system.
+
+For macOS Apple Silicon users, if any dependency is missing, ASKE will provide clear, step-by-step instructions to install it.
+	
+For instance, it might suggest installing dependencies via Homebrew:
+
+```brew install <dependency>```
+
+And if needed, guide you through using environment managers to handle multiple versions.
+
+## Guided Installation Process
+Throughout the execution of the pipeline, if the system identifies that a required dependency isn’t installed, it will:
+	- Prompt the user with a message indicating the missing dependency.
+	- Offer direct guidance or commands that can be executed to install the missing dependency specifically optimized for macOS Apple Silicon.
+	- Wait for confirmation or automatic detection of the dependency installation before proceeding further.
+	
+## Final Outcome:
+Once all dependency checks are passed and the necessary frameworks are successfully installed, ASKE will finalize the project setup. At this point, you will have a fully configured project environment, ready for development with the chosen framework.
+	
+These instructions outline the ideal usage of the ASKE workflow, emphasizing continuous dependency checking and guided installations tailored for macOS Apple Silicon users.
 
 These additions will make ASKE a versatile initializer for a wide range of development environments.
 

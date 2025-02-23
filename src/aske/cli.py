@@ -744,25 +744,119 @@ def php(name):
         click.echo(error_text("Please choose a different name or remove the existing directory"), err=True)
         sys.exit(1)
     
+    # Check if Apache is installed and running
+    try:
+        # First check if Homebrew Apache is installed
+        try:
+            subprocess.run(['brew', 'list', 'httpd'], capture_output=True, check=True)
+            apache_version = subprocess.run(['/opt/homebrew/bin/httpd', '-v'], capture_output=True, text=True).stdout
+            click.echo(f"✓ Homebrew Apache detected: {apache_version.split('\\n')[0]}")
+        except subprocess.CalledProcessError:
+            click.echo(error_text("\n⚠️  Homebrew Apache (httpd) is not installed!"))
+            click.echo("\nPlease install Apache through Homebrew:")
+            click.echo(command_text("brew install httpd"))
+            click.echo("\nThen start Apache service:")
+            click.echo(command_text("brew services start httpd"))
+            click.echo("\nConfigure Apache for PHP:")
+            click.echo(command_text("sudo mkdir -p /opt/homebrew/etc/httpd/extra"))
+            click.echo(command_text("echo 'LoadModule php_module /opt/homebrew/opt/php@8.2/lib/httpd/modules/libphp.so' | sudo tee /opt/homebrew/etc/httpd/extra/php-module.conf"))
+            click.echo(command_text("echo 'Include /opt/homebrew/etc/httpd/extra/php-module.conf' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf"))
+            click.echo(command_text("brew services restart httpd"))
+            return
+        
+        # Check if Homebrew Apache is running
+        apache_status = subprocess.run(['brew', 'services', 'list'], capture_output=True, text=True).stdout
+        if 'httpd' not in apache_status or 'started' not in apache_status:
+            click.echo(error_text("\n⚠️  Homebrew Apache service is not running!"))
+            click.echo("\nStart Apache service with:")
+            click.echo(command_text("brew services start httpd"))
+            click.echo("\nConfigure Apache for PHP:")
+            click.echo(command_text("sudo mkdir -p /opt/homebrew/etc/httpd/extra"))
+            click.echo(command_text("echo 'LoadModule php_module /opt/homebrew/opt/php@8.2/lib/httpd/modules/libphp.so' | sudo tee /opt/homebrew/etc/httpd/extra/php-module.conf"))
+            click.echo(command_text("echo 'Include /opt/homebrew/etc/httpd/extra/php-module.conf' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf"))
+            click.echo(command_text("brew services restart httpd"))
+            return
+        
+        click.echo("✓ Homebrew Apache service is running")
+        
+    except FileNotFoundError:
+        click.echo(error_text("\n⚠️  Homebrew or Apache command not found!"))
+        click.echo("\nPlease install Apache through Homebrew:")
+        click.echo(command_text("brew install httpd"))
+        click.echo("\nThen start Apache service:")
+        click.echo(command_text("brew services start httpd"))
+        click.echo("\nConfigure Apache for PHP:")
+        click.echo(command_text("sudo mkdir -p /opt/homebrew/etc/httpd/extra"))
+        click.echo(command_text("echo 'LoadModule php_module /opt/homebrew/opt/php@8.2/lib/httpd/modules/libphp.so' | sudo tee /opt/homebrew/etc/httpd/extra/php-module.conf"))
+        click.echo(command_text("echo 'Include /opt/homebrew/etc/httpd/extra/php-module.conf' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf"))
+        click.echo(command_text("brew services restart httpd"))
+        return
+
     # Check if PHP is installed
     try:
-        php_version = subprocess.run(['php', '-v'], capture_output=True, text=True).stdout
-        if '8.2' not in php_version:
-            click.echo(error_text("\n❌ PHP 8.2 is required but not found!"))
-            click.echo("\nPlease install PHP 8.2:")
-            click.echo(command_text("brew install php@8.2"))
-            click.echo("\nThen add PHP to your PATH:")
-            click.echo(command_text('echo \'export PATH="/usr/local/opt/php@8.2/bin:$PATH"\' >> ~/.zshrc'))
-            click.echo(command_text("source ~/.zshrc"))
+        # First check where PHP is installed
+        try:
+            php_path = subprocess.run(['which', 'php'], capture_output=True, text=True).stdout.strip()
+            if not php_path:
+                raise FileNotFoundError("PHP not found in PATH")
+            click.echo(f"✓ PHP found at: {php_path}")
+            
+            # Now check PHP version
+            php_version = subprocess.run([php_path, '-v'], capture_output=True, text=True).stdout
+            if '8.2' not in php_version:
+                click.echo(error_text("\n❌ PHP 8.2 is required but not found!"))
+                click.echo("\nPlease install PHP 8.2:")
+                click.echo(command_text("brew install php@8.2"))
+                click.echo("\nThen add PHP to your PATH:")
+                click.echo(command_text('echo \'export PATH="/opt/homebrew/opt/php@8.2/bin:$PATH"\' >> ~/.zshrc'))
+                click.echo(command_text('echo \'export PATH="/opt/homebrew/opt/php@8.2/sbin:$PATH"\' >> ~/.zshrc'))
+                click.echo(command_text("source ~/.zshrc"))
+                click.echo("\nVerify installation:")
+                click.echo(command_text("which php  # Should show /opt/homebrew/opt/php@8.2/bin/php"))
+                click.echo(command_text("php -v    # Should show PHP 8.2.x"))
+                click.echo("\nConfigure PHP with Apache:")
+                click.echo(command_text("echo 'LoadModule php_module /opt/homebrew/opt/php@8.2/lib/httpd/modules/libphp.so' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf"))
+                click.echo(command_text('echo \'<FilesMatch \\.php$>\' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
+                click.echo(command_text('echo "    SetHandler application/x-httpd-php" | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
+                click.echo(command_text('echo "</FilesMatch>" | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
+                click.echo("\nStart PHP service:")
+                click.echo(command_text("brew services start php@8.2"))
+                click.echo(command_text("brew services restart httpd"))
+                return
+            click.echo(f"✓ PHP detected: {php_version.split('\\n')[0]}")
+            
+        except subprocess.CalledProcessError:
+            raise FileNotFoundError("PHP not found")
+        
+        # Check if PHP service is running
+        php_status = subprocess.run(['brew', 'services', 'list'], capture_output=True, text=True).stdout
+        if 'php@8.2' not in php_status or 'started' not in php_status:
+            click.echo(error_text("\n⚠️  PHP service is not running!"))
+            click.echo("\nStart PHP service with:")
+            click.echo(command_text("brew services start php@8.2"))
             return
-        click.echo(f"✓ PHP detected: {php_version.split('\\n')[0]}")
+            
+        click.echo("✓ PHP service is running")
+        
     except FileNotFoundError:
         click.echo(error_text("\n❌ PHP is not installed!"))
         click.echo("\nPlease install PHP first:")
         click.echo(command_text("brew install php@8.2"))
         click.echo("\nThen add PHP to your PATH:")
-        click.echo(command_text('echo \'export PATH="/usr/local/opt/php@8.2/bin:$PATH"\' >> ~/.zshrc'))
+        click.echo(command_text('echo \'export PATH="/opt/homebrew/opt/php@8.2/bin:$PATH"\' >> ~/.zshrc'))
+        click.echo(command_text('echo \'export PATH="/opt/homebrew/opt/php@8.2/sbin:$PATH"\' >> ~/.zshrc'))
         click.echo(command_text("source ~/.zshrc"))
+        click.echo("\nVerify installation:")
+        click.echo(command_text("which php  # Should show /opt/homebrew/opt/php@8.2/bin/php"))
+        click.echo(command_text("php -v    # Should show PHP 8.2.x"))
+        click.echo("\nConfigure PHP with Apache:")
+        click.echo(command_text("echo 'LoadModule php_module /opt/homebrew/opt/php@8.2/lib/httpd/modules/libphp.so' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf"))
+        click.echo(command_text('echo \'<FilesMatch \\.php$>\' | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
+        click.echo(command_text('echo "    SetHandler application/x-httpd-php" | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
+        click.echo(command_text('echo "</FilesMatch>" | sudo tee -a /opt/homebrew/etc/httpd/httpd.conf'))
+        click.echo("\nStart PHP service:")
+        click.echo(command_text("brew services start php@8.2"))
+        click.echo(command_text("brew services restart httpd"))
         return
 
     # Check if Composer is installed
