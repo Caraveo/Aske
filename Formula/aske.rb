@@ -3,11 +3,11 @@ class Aske < Formula
 
   desc "Platform Architect Development Framework"
   homepage "https://github.com/caraveo/aske"
-  url "https://github.com/Caraveo/homebrew-aske/releases/download/0.4.0/aske-0.4.0.tar.gz"
-  sha256 "YOUR_NEW_SHA256_HERE"  # This will need to be updated after building
+  url "https://github.com/Caraveo/homebrew-aske/releases/download/0.5.0/aske-0.5.0.tar.gz"
+  sha256 "36f3921fc5bbe4b49716968e489aa5e791b86bac5c006896ab921829eed7ade5"
   license "MIT"
 
-  depends_on "python@3.11"
+  depends_on "python@3.9"
 
   resource "click" do
     url "https://files.pythonhosted.org/packages/96/d3/f04c7bfcf5c1862a2a5b845c6b2b360488cf47af55dfa79c98f6a6bf98b5/click-8.1.7.tar.gz"
