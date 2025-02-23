@@ -12,7 +12,8 @@ from aske.core.models import (
     NextjsModel,
     ExpressModel,
     RubyModel,
-    SpringModel
+    SpringModel,
+    LaravelModel
 )
 
 # Add color constants
@@ -726,6 +727,124 @@ def java(name):
 
     except subprocess.CalledProcessError as e:
         click.echo(error_text(f"\n❌ Error creating Spring Boot project: {e}"), err=True)
+        return
+    except Exception as e:
+        click.echo(error_text(f"\n❌ Unexpected error: {e}"), err=True)
+        return
+
+@main.command()
+@click.argument('name')
+def php(name):
+    """Create a new Laravel project"""
+    project_path = os.path.abspath(name)
+    
+    # Check if project already exists
+    if os.path.exists(project_path):
+        click.echo(error_text(f"❌ Error: Project directory '{name}' already exists"), err=True)
+        click.echo(error_text("Please choose a different name or remove the existing directory"), err=True)
+        sys.exit(1)
+    
+    # Check if PHP is installed
+    try:
+        php_version = subprocess.run(['php', '-v'], capture_output=True, text=True).stdout
+        if '8.2' not in php_version:
+            click.echo(error_text("\n❌ PHP 8.2 is required but not found!"))
+            click.echo("\nPlease install PHP 8.2:")
+            click.echo(command_text("brew install php@8.2"))
+            click.echo("\nThen add PHP to your PATH:")
+            click.echo(command_text('echo \'export PATH="/usr/local/opt/php@8.2/bin:$PATH"\' >> ~/.zshrc'))
+            click.echo(command_text("source ~/.zshrc"))
+            return
+        click.echo(f"✓ PHP detected: {php_version.split('\\n')[0]}")
+    except FileNotFoundError:
+        click.echo(error_text("\n❌ PHP is not installed!"))
+        click.echo("\nPlease install PHP first:")
+        click.echo(command_text("brew install php@8.2"))
+        click.echo("\nThen add PHP to your PATH:")
+        click.echo(command_text('echo \'export PATH="/usr/local/opt/php@8.2/bin:$PATH"\' >> ~/.zshrc'))
+        click.echo(command_text("source ~/.zshrc"))
+        return
+
+    # Check if Composer is installed
+    try:
+        composer_version = subprocess.run(['composer', '--version'], capture_output=True, text=True).stdout
+        click.echo(f"✓ Composer detected: {composer_version.split('\\n')[0]}")
+    except FileNotFoundError:
+        click.echo(error_text("\n❌ Composer is not installed!"))
+        click.echo("\nPlease install Composer first:")
+        click.echo(command_text("brew install composer"))
+        return
+
+    click.echo(f"\n🚀 Creating new Laravel project: {name}")
+    click.echo("=" * 50)
+
+    try:
+        # Create Laravel project using Composer
+        click.echo("\n📦 Creating Laravel project...")
+        subprocess.run([
+            'composer', 'create-project', 'laravel/laravel', name,
+            '--prefer-dist', '--no-interaction'
+        ], check=True)
+
+        # Create HelloController
+        controller_path = os.path.join(project_path, 'app', 'Http', 'Controllers', 'HelloController.php')
+        os.makedirs(os.path.dirname(controller_path), exist_ok=True)
+        with open(controller_path, 'w') as f:
+            f.write(LaravelModel.get_hello_controller())
+        click.echo("✓ Created HelloController")
+
+        # Create HelloController test
+        test_path = os.path.join(project_path, 'tests', 'Feature', 'HelloControllerTest.php')
+        os.makedirs(os.path.dirname(test_path), exist_ok=True)
+        with open(test_path, 'w') as f:
+            f.write(LaravelModel.get_hello_test())
+        click.echo("✓ Created HelloController test")
+
+        # Add hello route to web.php
+        routes_path = os.path.join(project_path, 'routes', 'web.php')
+        with open(routes_path, 'a') as f:
+            f.write("\nRoute::get('/hello', [App\\Http\\Controllers\\HelloController::class, 'index']);")
+        click.echo("✓ Added hello route")
+
+        # Update composer.json
+        composer_path = os.path.join(project_path, 'composer.json')
+        with open(composer_path, 'w') as f:
+            f.write(LaravelModel.get_composer_json(name))
+        click.echo("✓ Updated composer.json")
+
+        # Update .env
+        env_path = os.path.join(project_path, '.env')
+        with open(env_path, 'w') as f:
+            f.write(LaravelModel.get_env())
+        click.echo("✓ Updated .env")
+
+        # Update phpunit.xml
+        phpunit_path = os.path.join(project_path, 'phpunit.xml')
+        with open(phpunit_path, 'w') as f:
+            f.write(LaravelModel.get_phpunit_xml())
+        click.echo("✓ Updated phpunit.xml")
+
+        # Update README.md
+        readme_path = os.path.join(project_path, 'README.md')
+        with open(readme_path, 'w') as f:
+            f.write(LaravelModel.get_readme(name))
+        click.echo("✓ Updated README.md")
+
+        # Install dependencies
+        click.echo("\n📦 Installing dependencies...")
+        subprocess.run(['composer', 'install'], cwd=project_path, check=True)
+
+        click.echo("\n✨ Laravel project created successfully!")
+        click.echo("\nNext steps:")
+        click.echo(command_text(f"cd {name}"))
+        click.echo(command_text("cp .env.example .env  # Copy environment file"))
+        click.echo(command_text("php artisan key:generate  # Generate application key"))
+        click.echo(command_text("php artisan serve  # Start development server"))
+        click.echo(command_text("aske init  # Initialize git repository"))
+        click.echo("\nThen visit: http://localhost:8000/hello")
+
+    except subprocess.CalledProcessError as e:
+        click.echo(error_text(f"\n❌ Error creating Laravel project: {e}"), err=True)
         return
     except Exception as e:
         click.echo(error_text(f"\n❌ Unexpected error: {e}"), err=True)
