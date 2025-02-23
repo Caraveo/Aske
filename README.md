@@ -95,7 +95,7 @@ Initial Command Execution:
 
 ```aske <template> <project>```
 
-This command initializes the project using the specified template (e.g., python, node, laravel, etc.) and creates the project directory with a standard structure.
+This command initializes the project using the specified template (e.g., python, node, PHP, etc.) and creates the project directory with a standard structure.
 
 ## Continuous Pipeline Execution
 
