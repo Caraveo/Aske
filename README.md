@@ -8,6 +8,7 @@ ASKE is an opinionated command-line tool designed to simplify and accelerate the
 - Node.js: Uses Express.js or Next.js
 - Database: Defaults to PostgreSQL where applicable
 - PHP: Uses Laravel with Composer
+- Go: Uses Gin, Echo, Fiber, Chi, Buffalo, or Revel
 
 > **Note:** Currently, ASKE is optimized for macOS environments, particularly those running on Apple Silicon. Future versions will aim to provide better cross-platform support and modularity.
 
@@ -63,11 +64,6 @@ To create a new Python project, use the following command:
 	- Generate essential project files (e.g., requirements.txt, .env, and a starter app.py).
 	- Provide a starting point for your project with a basic Python application.
 
-## Future Framework Support
-
-### ASKE is built with extensibility in mind. Planned future enhancements include support for:
-	- Go: (e.g., Gin, Echo)
-
 
 Available commands:
 
@@ -82,6 +78,8 @@ Available commands:
 ```aske java project-name```
 
 ```aske php project-name```
+
+```aske go project-name --framework=gin|echo|fiber|chi|buffalo|revel```
 
 Initialize a projects git repository and add a .gitignore file:
 
