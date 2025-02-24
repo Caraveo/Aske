@@ -18,9 +18,9 @@ from aske.core.models import (
     LaravelModel,
     GoBaseModel
 )
-from aske.core.dynamo.mysql import MySQLModel
-from aske.core.dynamo.postgresql import PostgreSQLModel
-from aske.core.dynamo.mongodb import MongoDBModel
+from aske.core.sol.mysql import MySQLModel
+from aske.core.sol.postgresql import PostgreSQLModel
+from aske.core.sol.mongodb import MongoDBModel
 
 # Add color constants
 RED = "\033[91m"
