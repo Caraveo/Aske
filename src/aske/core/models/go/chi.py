@@ -12,7 +12,7 @@ class ChiModel(GinModel):
 go 1.21
 
 require (
-    github.com/go-chi/chi/v5 v5.0.10
+    github.com/go-chi/chi/v5 v5.0.12
     github.com/go-chi/cors v1.2.1
     github.com/joho/godotenv v1.5.1
 )
@@ -46,24 +46,36 @@ func main() {
     r.Use(middleware.Logger)
     r.Use(middleware.Recoverer)
     r.Use(cors.Handler(cors.Options{
-        AllowedOrigins: []string{"*"},
-        AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-        AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
-        MaxAge:         300,
+        AllowedOrigins:   []string{"*"},
+        AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+        ExposedHeaders:   []string{"Link"},
+        AllowCredentials: true,
+        MaxAge:           300,
     }))
 
     // Routes
+    r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+        json.NewEncoder(w).Encode(map[string]string{
+            "message": "Welcome to Chi!",
+        })
+    })
+
     r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(map[string]string{
             "message": "pong",
         })
     })
 
-    // API routes
-    r.Route("/api", func(r chi.Router) {
-        r.Get("/health", HealthCheck)
+    r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{
+            "status": "ok",
+        })
     })
 
+    // Get port from environment
     port := os.Getenv("PORT")
     if port == "" {
         port = "8080"
@@ -71,13 +83,6 @@ func main() {
 
     log.Printf("Server starting on port %s", port)
     log.Fatal(http.ListenAndServe(":"+port, r))
-}
-
-func HealthCheck(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(map[string]string{
-        "status": "ok",
-    })
 }
 '''
 
@@ -88,29 +93,29 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 🚀 Chi Framework Quick Start:
 
 1. Project Structure:
-   - handlers/: HTTP request handlers
+   - handlers/: HTTP handlers
    - middleware/: Custom middleware
    - models/: Data models
-   - routes/: Route definitions
+   - services/: Business logic
 
 2. Key Features:
    - Lightweight and fast
-   - Standard library compatible
    - Middleware support
    - URL pattern routing
+   - Composable handlers
 
 3. Best Practices:
-   - Use standard http.Handler interface
-   - Implement middleware as needed
+   - Use middleware for common tasks
    - Group related routes
-   - Handle errors consistently
+   - Handle errors properly
+   - Use context for request scoping
 
 4. Documentation:
    - Chi Guide: https://go-chi.io
    - API Reference: https://pkg.go.dev/github.com/go-chi/chi/v5
 
 5. Development Tools:
-   - air: Live reload
-   - swag: API documentation
-   - curl/httpie: API testing
+   - go run: Live development
+   - go test: Run tests
+   - go build: Build for production
 ''' 
