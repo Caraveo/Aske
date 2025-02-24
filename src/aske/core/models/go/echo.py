@@ -44,28 +44,38 @@ func main() {
     e.Use(middleware.CORS())
 
     // Routes
+    e.GET("/", func(c echo.Context) error {
+        return c.JSON(200, map[string]string{
+            "message": "Welcome to Echo!",
+        })
+    })
+
+    e.GET("/hello", func(c echo.Context) error {
+        return c.JSON(200, map[string]string{
+            "message": "Hello, World!",
+        })
+    })
+
     e.GET("/ping", func(c echo.Context) error {
         return c.JSON(200, map[string]string{
             "message": "pong",
         })
     })
 
-    // API routes
-    api := e.Group("/api")
-    api.GET("/health", HealthCheck)
+    e.GET("/api/health", func(c echo.Context) error {
+        return c.JSON(200, map[string]string{
+            "status": "ok",
+        })
+    })
 
+    // Get port from environment
     port := os.Getenv("PORT")
     if port == "" {
         port = "8080"
     }
 
+    log.Printf("Server starting on port %s", port)
     e.Logger.Fatal(e.Start(":" + port))
-}
-
-func HealthCheck(c echo.Context) error {
-    return c.JSON(200, map[string]string{
-        "status": "ok",
-    })
 }
 '''
 
@@ -76,28 +86,29 @@ func HealthCheck(c echo.Context) error {
 🚀 Echo Framework Quick Start:
 
 1. Project Structure:
-   - handlers/: HTTP request handlers
+   - handlers/: HTTP handlers
    - middleware/: Custom middleware
    - models/: Data models
    - routes/: Route definitions
 
 2. Key Features:
-   - Minimalist and fast
+   - High performance
+   - Minimalist design
    - Built-in middleware
-   - Automatic TLS
-   - WebSocket support
+   - Extensible architecture
 
 3. Best Practices:
-   - Use Context for request handling
-   - Implement custom middleware
+   - Use proper error handling
    - Group related routes
-   - Use echo.Binder for validation
+   - Implement middleware
+   - Use Echo's context
 
 4. Documentation:
-   - Echo Guide: https://echo.labstack.com/guide
+   - Echo Guide: https://echo.labstack.com
    - API Reference: https://pkg.go.dev/github.com/labstack/echo/v4
 
 5. Development Tools:
-   - air: Live reload
-   - echogen: Code generator
+   - go run: Live development
+   - go test: Run tests
+   - go build: Build for production
 ''' 
