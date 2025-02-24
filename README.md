@@ -2,7 +2,7 @@
 
 **ASKE** is opinionated. It knows what it wants: **scale**, **growth**, **prosperity**. It makes choices for you while still giving you the option to **override** them.
 
-Answer the question: **“Aske what?”** Consider it philosophically. What can you do with ASKE? Startup or crash, scale or bust; create the next Node.js masterpiece or the Python framework that will change the world. It’s a launching point for all things—it helps you hit the ground running… no, flying! Whether it’s Node.js with Express or Next.js, Python with venv and a starter app, Ruby with Rails, Java with Spring Boot, PHP with Laravel, or Go with Gin, Echo, Fiber, Chi, Buffalo, or Revel, ASKE has you covered. Launch all the frameworks!
+Answer the question: **“Aske what?”** Consider it philosophically. What can you do with ASKE? Startup or crash, scale or bust; create the next Node.js masterpiece or the Python framework that will change the world. It’s a launching point for all things—it helps you hit the ground running… no, flying! Whether it’s Node.js with Express or Next.js, Python with venv and a starter app, Ruby with Rails, Java with Spring Boot, PHP with Laravel, or Go with Gin, Echo, Fiber, Chi, Buffalo, or Revel, ASKE has you covered.
 
 ASKE is not merely a tool; it’s a bold invitation to defy the mundane. With each command, you choose between the promise of rapid innovation or the risk of failure. The decision is yours: embark on a startup journey or face the challenge head-on, scaling new heights or confronting brute reality.
 
