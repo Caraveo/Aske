@@ -17,7 +17,6 @@ require (
     github.com/gobuffalo/mw-csrf v1.0.2
     github.com/gobuffalo/mw-forcessl v1.0.2
     github.com/gobuffalo/mw-paramlogger v1.0.2
-    github.com/gobuffalo/pop/v6 v6.1.1
     github.com/joho/godotenv v1.5.1
 )
 '''
@@ -29,6 +28,7 @@ require (
 
 import (
     "log"
+    "os"
 
     "github.com/gobuffalo/buffalo"
     "github.com/gobuffalo/buffalo/render"
@@ -36,27 +36,42 @@ import (
     "github.com/gobuffalo/mw-csrf"
     "github.com/gobuffalo/mw-forcessl"
     "github.com/gobuffalo/mw-paramlogger"
+    "github.com/joho/godotenv"
 )
 
 var app *buffalo.App
 var r *render.Engine
 
 func main() {
+    if err := godotenv.Load(); err != nil {
+        log.Printf("Warning: .env file not found")
+    }
+
     app = buffalo.New(buffalo.Options{
         Env:         envy.Get("GO_ENV", "development"),
         SessionName: "_app_session",
     })
 
     // Middleware
-    app.Use(forceSSL())
+    app.Use(forcessl.Middleware(secure.Options{
+        SSLRedirect:     envy.Get("SSL_REDIRECT", "false") == "true",
+        SSLProxyHeaders: map[string]string{"X-Forwarded-Proto": "https"},
+    }))
     app.Use(paramlogger.ParameterLogger)
     app.Use(csrf.New)
 
     // Routes
     app.GET("/", HomeHandler)
-    app.GET("/api/health", HealthCheck)
+    app.GET("/ping", PingHandler)
+    app.GET("/api/health", HealthHandler)
 
     // Start the server
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+
+    log.Printf("Starting application on port %s", port)
     log.Fatal(app.Serve())
 }
 
@@ -66,17 +81,16 @@ func HomeHandler(c buffalo.Context) error {
     }))
 }
 
-func HealthCheck(c buffalo.Context) error {
+func PingHandler(c buffalo.Context) error {
     return c.Render(200, r.JSON(map[string]string{
-        "status": "ok",
+        "message": "pong",
     }))
 }
 
-func forceSSL() buffalo.MiddlewareFunc {
-    return forcessl.Middleware(secure.Options{
-        SSLRedirect:     envy.Get("SSL_REDIRECT", "false") == "true",
-        SSLProxyHeaders: map[string]string{"X-Forwarded-Proto": "https"},
-    })
+func HealthHandler(c buffalo.Context) error {
+    return c.Render(200, r.JSON(map[string]string{
+        "status": "ok",
+    }))
 }
 '''
 

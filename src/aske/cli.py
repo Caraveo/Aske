@@ -1257,6 +1257,16 @@ def go(name, framework):
     click.echo(f"\n🚀 Creating new Go project with {framework.title()}: {name}")
     click.echo("=" * 50)
 
+    # Check Go installation
+    try:
+        result = subprocess.run(['go', 'version'], capture_output=True, text=True)
+        click.echo(f"✓ Go is installed: {result.stdout.strip()}")
+    except FileNotFoundError:
+        click.echo(error_text("\n❌ Go is not installed!"))
+        click.echo("\nPlease install Go first:")
+        click.echo(command_text("brew install go"))
+        return
+
     # Import the appropriate model based on framework choice
     if framework == 'pure':
         from aske.core.models.go import GoModel
@@ -1270,20 +1280,6 @@ def go(name, framework):
             click.echo("Falling back to Gin framework")
             from aske.core.models.go.gin import GinModel
             model_class = GinModel
-
-    # Check golangci-lint installation
-    try:
-        subprocess.run(['golangci-lint', '--version'], capture_output=True)
-        click.echo("✓ golangci-lint is installed")
-    except FileNotFoundError:
-        click.echo("\nInstalling golangci-lint for code quality...")
-        try:
-            subprocess.run(['brew', 'install', 'golangci-lint'], check=True)
-            click.echo("✓ golangci-lint installed successfully")
-        except subprocess.CalledProcessError as e:
-            click.echo(error_text(f"\n❌ Error installing golangci-lint: {e}"))
-            click.echo(command_text("\nInstall manually with: brew install golangci-lint"))
-            return
 
     # Check if project already exists
     if os.path.exists(project_path):
@@ -1300,14 +1296,26 @@ def go(name, framework):
     click.echo("✓ Created project structure")
 
     # Create project files
-    files = {
-        'go.mod': model_class.get_mod_file(name),
-        'cmd/main/main.go': model_class.get_main_file(),
-        '.env': model_class.get_env(),
-        '.gitignore': model_class.get_gitignore(),
-        'README.md': model_class.get_readme(name),
-        'Makefile': model_class.get_makefile()
-    }
+    if framework == 'revel':
+        files = {
+            'go.mod': model_class.get_mod_file(name),
+            'app/controllers/app.go': model_class.get_app_controller(),
+            'conf/app.conf': model_class.get_app_conf(),
+            'conf/routes': model_class.get_routes(),
+            'main.go': model_class.get_main_file(),  # Add main.go in root
+            '.env': model_class.get_env(),
+            '.gitignore': model_class.get_gitignore(),
+            'README.md': model_class.get_readme(name),
+        }
+    else:
+        files = {
+            'go.mod': model_class.get_mod_file(name),
+            'cmd/main/main.go': model_class.get_main_file(),
+            '.env': model_class.get_env(),
+            '.gitignore': model_class.get_gitignore(),
+            'README.md': model_class.get_readme(name),
+            'Makefile': model_class.get_makefile()
+        }
 
     for file_path, content in files.items():
         full_path = os.path.join(project_path, file_path)
@@ -1319,30 +1327,59 @@ def go(name, framework):
     # Initialize go modules and download dependencies
     click.echo("\n📦 Installing dependencies...")
     try:
+        # Initialize and download modules
+        subprocess.run(['go', 'mod', 'tidy'], cwd=project_path, check=True)
         subprocess.run(['go', 'mod', 'download'], cwd=project_path, check=True)
         click.echo("✓ Dependencies installed")
     except subprocess.CalledProcessError as e:
-        click.echo(error_text(f"\n❌ Error installing dependencies: {e}"))
-        click.echo("Try running 'go mod download' manually after setup")
+        click.echo(error_text(f"\n❌ Error installing dependencies"))
+        click.echo("\nTry running these commands manually:")
+        click.echo(command_text("go mod tidy"))
+        click.echo(command_text("go mod download"))
+        click.echo("\nIf you see missing module errors, run:")
+        if framework == 'echo':
+            click.echo(command_text("go get github.com/labstack/echo/v4"))
+            click.echo(command_text("go get github.com/joho/godotenv"))
+        elif framework == 'gin':
+            click.echo(command_text("go get github.com/gin-gonic/gin"))
+            click.echo(command_text("go get github.com/joho/godotenv"))
+        elif framework == 'fiber':
+            click.echo(command_text("go get github.com/gofiber/fiber/v2"))
+        # Add other frameworks as needed
+        return
 
     click.echo("\n✨ Go project created successfully!")
     
-    # Show Go best practices and next steps
-    click.echo("\n📚 Go Development Best Practices:")
-    click.echo("1. Use 'go fmt' to format your code")
-    click.echo("2. Run 'golangci-lint run' before commits")
-    click.echo("3. Write tests for your packages")
-    click.echo("4. Follow the standard project layout")
-    click.echo("5. Use go modules for dependency management")
+    # Show framework-specific instructions
+    if hasattr(model_class, 'get_post_create_instructions'):
+        click.echo(model_class.get_post_create_instructions())
     
-    click.echo("\n🚀 Next steps:")
-    click.echo(command_text(f"cd {name}"))
-    click.echo(command_text("go mod tidy        # Clean up dependencies"))
-    click.echo(command_text("go run cmd/main/main.go  # Run the application"))
-    click.echo(command_text("make test          # Run tests"))
-    click.echo(command_text("make build         # Build the application"))
-    click.echo(command_text("golangci-lint run  # Check code quality"))
-    click.echo(command_text("aske init          # Initialize git repository"))
+    if framework == 'revel':
+        click.echo("\n🚀 Next steps:")
+        click.echo(command_text(f"cd {name}"))
+        click.echo(command_text("go install github.com/revel/cmd/revel@latest  # Install Revel CLI"))
+        click.echo(command_text("go mod tidy        # Clean up dependencies"))
+        click.echo(command_text("revel run          # Run the Revel application"))
+        click.echo(command_text("aske init          # Initialize git repository"))
+        click.echo("\nThen visit: http://localhost:9000")
+    else:
+        click.echo("\n🚀 Next steps:")
+        click.echo(command_text(f"cd {name}"))
+        click.echo(command_text("go mod tidy        # Clean up dependencies"))
+        click.echo(command_text("go run cmd/main/main.go  # Run the application"))
+        click.echo(command_text("make test          # Run tests"))
+        click.echo(command_text("make build         # Build the application"))
+        click.echo(command_text("golangci-lint run  # Check code quality"))
+        click.echo(command_text("aske init          # Initialize git repository"))
+
+    click.echo("\n⚠️  If you see missing module errors, run:")
+    if framework == 'echo':
+        click.echo(command_text("go get github.com/labstack/echo/v4"))
+    elif framework == 'gin':
+        click.echo(command_text("go get github.com/gin-gonic/gin"))
+    elif framework == 'fiber':
+        click.echo(command_text("go get github.com/gofiber/fiber/v2"))
+    click.echo(command_text("go get github.com/joho/godotenv"))
 
 if __name__ == '__main__':
     main()
