@@ -1,6 +1,5 @@
 # ASKE - Automated Starter Kit Ecosystem
 
-## What is ASKE?
 **ASKE** is opinionated. It knows what it wants: **scale**, **growth**, **prosperity**. It makes choices for you while still giving you the option to **override** them.
 
 Answer the question: **“Aske what?”** Consider it philosophically. What can you do with ASKE? Startup or crash, scale or bust; create the next Node.js masterpiece or the Python framework that will change the world. It’s a launching point for all things—it helps you hit the ground running… no, flying! Whether it’s Node.js with Express or Next.js, Python with venv and a starter app, Ruby with Rails, Java with Spring Boot, PHP with Laravel, or Go with Gin, Echo, Fiber, Chi, Buffalo, or Revel, ASKE has you covered. Launch all the frameworks!
@@ -11,7 +10,7 @@ In essence, ASKE compels you to embrace both the speed and precision required to
 
 It’s almost a meme now—“Launch all the frameworks!”—a rallying cry for developers who dare to dream big and build even bigger.
 
-##Overview
+## Overview
 
 ASKE is an opinionated command-line tool designed to simplify and accelerate the process of initializing and managing development projects. By being opinionated, ASKE makes specific technology choices to fast-track framework creation:
 
