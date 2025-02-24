@@ -1,4 +1,4 @@
-# ASKE - Platform Architect Development Framework
+# ASKE - Automated Starter Kit Ecosystem
 
 ASKE is an opinionated command-line tool designed to simplify and accelerate the process of initializing and managing development projects. By being opinionated, ASKE makes specific technology choices to fast-track framework creation:
 
