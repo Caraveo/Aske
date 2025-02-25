@@ -1,4 +1,4 @@
-# ASKE - Automated Starter Kit Ecosystem
+# ASKE - Architect Services KIT Ecosystem
 
 **ASKE** is opinionated. It knows what it wants: **scale**, **growth**, **prosperity**. It makes choices for you while still giving you the option to **override** them.
 
